@@ -3,6 +3,7 @@ using Fusion;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.UI;
 
 /// <summary>
 /// 모든 NPC 스크립트가 상속받을 부모 추상 클래스입니다.
@@ -18,8 +19,6 @@ public abstract class BaseNPC : MonoBehaviour
 
     [Header("이벤트 채널 - Listening to")]
     [SerializeField] private BoolEventChannelSO OnGroupDanceStart;
-    [SerializeField] public BoolEventChannelSO OnMaskDanceStart;
-    [SerializeField] public IntEventChannelSO GroupNumberChannel;
     [SerializeField] public IntEventChannelSO DanceIndexChannel;
     
     public enum ActionState
@@ -60,20 +59,9 @@ public abstract class BaseNPC : MonoBehaviour
         if (OnGroupDanceStart != null)
         {
             OnGroupDanceStart.OnEventRaised += ExecuteGroupDance;
-        }
-        else
-        {
-            Debug.LogWarning("[BaseNPC] OnGroupDanceStart not assigned.", this);
+            DanceIndexChannel.OnEventRaised += ExecuteMaskDance;
         }
 
-        if (OnMaskDanceStart != null)
-        {
-            OnMaskDanceStart.OnEventRaised += ExecuteMaskDance;
-        }
-        else
-        {
-            Debug.LogWarning("[BaseNPC] OnMaskDanceStart not assigned.", this);
-        }
     }
 
     private void OnDisable()
@@ -81,11 +69,6 @@ public abstract class BaseNPC : MonoBehaviour
         if (OnGroupDanceStart != null)
         {
             OnGroupDanceStart.OnEventRaised -= ExecuteGroupDance;
-        }
-
-        if (OnMaskDanceStart != null)
-        {
-            OnMaskDanceStart.OnEventRaised -= ExecuteMaskDance;
         }
     }
 
@@ -102,38 +85,42 @@ public abstract class BaseNPC : MonoBehaviour
     }
 
     /// <summary>
-    /// 자식 NPC 클래스가 반드시 구현해야 하는 추상 메서드입니다.
-    /// 각 NPC의 고유한 행동 로직이 이 메서드 안에 작성됩니다.
+    /// 각 그룹의 가면 행동
     /// </summary>
     protected abstract void ExecuteMaskBehavior();
 
-    protected void ExecuteMaskDance(bool isStart)
+
+    /// <summary>
+    /// 각 그룹별 가면 댄스. 그룹 별로 같은 춤
+    /// </summary>
+    /// <param name="isStart"></param>
+    protected void ExecuteMaskDance(int danceIndex)
     {
-        if (NpcController == null)
+        if (currentState == ActionState.GroupDance)
         {
-            Debug.LogWarning("[BaseNPC] NpcController missing for mask dance.", this);
+            // 단체 댄스 중일 때는 가면 댄스로 전환하지 않음
             return;
         }
-
-        if (isStart)
-        {
-            currentState = ActionState.MaskDance;
-
-            NpcController.StartDance(0);
-            Debug.Log("[BaseNPC] Mask dance start (index 0).", this);
-        }
-        else
+        if (danceIndex == -1)
         {
             currentState = ActionState.MaskBehavior;
             NpcController.StopDance();
-            Debug.Log("[BaseNPC] Mask dance end.", this);
+        }
+        else
+        {
+            currentState = ActionState.MaskDance;
+            NpcController.StartDance(danceIndex);
         }
     }
+
+    /// <summary>
+    /// 단체 댄스. 모두가 함께 춤. 전부 랜덤
+    /// </summary>
+    /// <param name="isStart"></param>
     protected void ExecuteGroupDance(bool isStart)
     {
         if (NpcController == null)
         {
-            Debug.LogWarning("[BaseNPC] NpcController missing for group dance.", this);
             return;
         }
 
@@ -142,13 +129,11 @@ public abstract class BaseNPC : MonoBehaviour
         {
             currentState = ActionState.GroupDance;
             NpcController.StartDance(danceIndex);
-            Debug.Log($"[BaseNPC] Group dance start (index {danceIndex}).", this);
         }
         else
         {
             currentState = ActionState.MaskBehavior;
             NpcController.StopDance();
-            Debug.Log("[BaseNPC] Group dance end.", this);
         }
     }
 
@@ -156,7 +141,6 @@ public abstract class BaseNPC : MonoBehaviour
     {
         if (range.Length != 2)
         {
-            Debug.LogError("범위 배열의 길이는 2여야 합니다.");
             return 0f;
         }
         return Random.Range(range[0], range[1]);
@@ -166,7 +150,6 @@ public abstract class BaseNPC : MonoBehaviour
     {
         if (range.Length != 2)
         {
-            Debug.LogError("범위 배열의 길이는 2여야 합니다.");
             return 0;
         }
         // For integers, Random.Range's upper bound is exclusive, so add 1 to make it inclusive.
