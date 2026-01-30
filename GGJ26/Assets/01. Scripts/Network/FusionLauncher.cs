@@ -18,7 +18,10 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
 
     [Header("Player")]
     [SerializeField] private NetworkObject playerPrefab;
+    [SerializeField] private NetworkObject seekerPrefab;
+    [SerializeField] private NetworkObject normalPrefab;
     [SerializeField] private float fallbackSpawnRadius = 4f;
+    [SerializeField] private PlayerStateManager playerStateManager;
 
     private readonly Dictionary<PlayerRef, NetworkObject> spawnedPlayers = new Dictionary<PlayerRef, NetworkObject>();
     private readonly List<NetworkSpawnPoint> spawnPoints = new List<NetworkSpawnPoint>();
@@ -42,6 +45,11 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
         }
 
         EnsureRunner();
+
+        if (playerStateManager == null)
+        {
+            playerStateManager = FindFirstObjectByType<PlayerStateManager>();
+        }
     }
 
     private void Start()
@@ -184,7 +192,8 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
 
     private void TrySpawnLocalPlayer(PlayerRef player)
     {
-        if (playerPrefab == null)
+        var prefab = GetPrefabForPlayer(player);
+        if (prefab == null)
         {
             Debug.LogError("Player prefab not set on FusionLauncher.");
             return;
@@ -206,7 +215,7 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
         }
 
         var spawnPos = GetSpawnPosition(player);
-        var obj = runner.Spawn(playerPrefab, spawnPos, Quaternion.identity, player);
+        var obj = runner.Spawn(prefab, spawnPos, Quaternion.identity, player);
         if (obj != null && obj.InputAuthority != player)
         {
             obj.AssignInputAuthority(player);
@@ -216,10 +225,58 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
             runner.SetPlayerObject(player, obj);
         }
         spawnedPlayers[player] = obj;
+
+        RegisterPlayerState(player);
+    }
+
+    private NetworkObject GetPrefabForPlayer(PlayerRef player)
+    {
+        if (runner == null)
+        {
+            return playerPrefab;
+        }
+
+        var seeker = GetDeterministicSeeker();
+        bool isSeeker = player == seeker;
+
+        if (isSeeker && seekerPrefab != null)
+        {
+            return seekerPrefab;
+        }
+
+        if (isSeeker == false && normalPrefab != null)
+        {
+            return normalPrefab;
+        }
+
+        return playerPrefab;
+    }
+
+    private PlayerRef GetDeterministicSeeker()
+    {
+        PlayerRef chosen = default;
+        bool hasValue = false;
+        foreach (var player in runner.ActivePlayers)
+        {
+            if (hasValue == false || player.RawEncoded < chosen.RawEncoded)
+            {
+                chosen = player;
+                hasValue = true;
+            }
+        }
+
+        if (hasValue == false)
+        {
+            return runner.LocalPlayer;
+        }
+
+        return chosen;
     }
 
     public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
     {
+        RegisterPlayerState(player);
+
         if (IsLobbyScene())
         {
             TryLoadGameSceneIfReady();
@@ -451,5 +508,21 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
 
         isMatchmaking = value;
         MatchmakingStateChanged?.Invoke(isMatchmaking);
+    }
+
+    private void RegisterPlayerState(PlayerRef player)
+    {
+        if (playerStateManager == null)
+        {
+            return;
+        }
+
+        string playerId = player.RawEncoded.ToString();
+        playerStateManager.RegisterPlayer(playerId, false);
+
+        if (runner != null && player == runner.LocalPlayer)
+        {
+            playerStateManager.SetLocalPlayer(playerId);
+        }
     }
 }

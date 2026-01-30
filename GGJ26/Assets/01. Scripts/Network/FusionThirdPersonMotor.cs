@@ -8,6 +8,8 @@ public class FusionThirdPersonMotor : NetworkBehaviour
     [SerializeField] private float moveSpeed = 4f;
     [SerializeField] private float sprintSpeed = 6f;
     [SerializeField] private float rotationSmoothTime = 0.12f;
+    [SerializeField] private float seekerMoveSpeed = 5f;
+    [SerializeField] private float seekerSprintSpeed = 7f;
     [SerializeField] private float gravity = -15f;
     [SerializeField] private float jumpHeight = 1.2f;
     [SerializeField] private float jumpBufferTime = 0.1f;
@@ -39,11 +41,13 @@ public class FusionThirdPersonMotor : NetworkBehaviour
     private float lastGroundedTime = -10f;
     private Camera mainCamera;
     private bool isGrounded;
+    private PlayerRole role;
 
     private void Awake()
     {
         controller = GetComponent<CharacterController>();
         mainCamera = Camera.main;
+        role = GetComponent<PlayerRole>();
         if (mainCamera == null)
         {
             var cameraObject = GameObject.FindGameObjectWithTag("MainCamera");
@@ -95,7 +99,15 @@ public class FusionThirdPersonMotor : NetworkBehaviour
             move.Normalize();
         }
 
-        float speed = input.Sprint ? sprintSpeed : moveSpeed;
+        float baseMove = moveSpeed;
+        float baseSprint = sprintSpeed;
+        if (role != null && role.IsSeeker)
+        {
+            baseMove = seekerMoveSpeed;
+            baseSprint = seekerSprintSpeed;
+        }
+
+        float speed = input.Sprint ? baseSprint : baseMove;
         float inputMagnitude = move == Vector3.zero ? 0f : 1f;
         float cameraYaw = mainCamera != null ? mainCamera.transform.eulerAngles.y : transform.eulerAngles.y;
         float targetRotation = transform.eulerAngles.y;

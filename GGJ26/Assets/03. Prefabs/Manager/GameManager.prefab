@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &7863296486997111603
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1495647940384630265}
+  - component: {fileID: 5635472117089175894}
+  m_Layer: 0
+  m_Name: GameManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1495647940384630265
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7863296486997111603}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 12.526033, y: 0.88758487, z: -8.539987}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5635472117089175894
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7863296486997111603}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5c7319fd2d3dfd54bb191ecc0953c698, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  saveLoadSystem: {fileID: 11400000, guid: 3ddf54fcd09ddfa43a859c90057fa0eb, type: 2}
+  inputReader: {fileID: 11400000, guid: 215e29f2c0e3fb442ae1e4be523de98e, type: 2}
+  playerTransformAnchor: {fileID: 11400000, guid: 53649e2f3a8b5f4499d49924ff2c7566, type: 2}
+  defaultSpawnPoint: {fileID: 0}
+  totalGameSeconds: 180
+  playerStateManager: {fileID: 5780521679406519432, guid: 302fb3a2e00a8fc4d910545cbeb7ddb8, type: 3}
+  statsManager: {fileID: 1025548861039293662, guid: 1bf158af3b757474db03a7dc4267d190, type: 3}
+  onGameStateChanged: {fileID: 11400000, guid: 904b9174fc324c84ba436b022aa55dd5, type: 2}
+  onGameEnded: {fileID: 11400000, guid: a7617ea9a6826b54fb2e7f0354afdbf9, type: 2}
+  onGameResult: {fileID: 11400000, guid: 5a5f993efd703a642b33eede934483b7, type: 2}
+  InitialGameState: 1

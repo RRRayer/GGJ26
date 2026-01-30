@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 702a0f3420f845d08995e734ff5dd4bd
+labels:
+- FusionPrefab
+AssetOrigin:
+  serializedVersion: 1
+  productId: 196526
+  packageName: Starter Assets - ThirdPerson | Updates in new CharacterController
+    package
+  packageVersion: 1.1.5
+  assetPath: Assets/StarterAssets/ThirdPersonController/Prefabs/PlayerArmature_Seeker.prefab
+  uploadId: 691128
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
