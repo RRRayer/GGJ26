@@ -13,7 +13,6 @@ public class DanceEventPublisher : MonoBehaviour
     [SerializeField] private float groupDanceDuration = 10f;
 
     [Header("Mask Dance Events (per color)")]
-    [SerializeField] private BoolEventChannelSO[] maskDanceActiveEvents = new BoolEventChannelSO[3];
     [SerializeField] private IntEventChannelSO[] maskDanceIndexEvents = new IntEventChannelSO[3];
 
     [Header("Group Dance Events")]
@@ -24,10 +23,6 @@ public class DanceEventPublisher : MonoBehaviour
 
     private void Start()
     {
-        Debug.Log(
-            $"[DanceEvent] Publisher start. MaskActive={GetEventNames(maskDanceActiveEvents)} MaskIndex={GetEventNames(maskDanceIndexEvents)} GroupActive={GetEventName(groupDanceActiveEvent)}",
-            this);
-
         for (int i = 0; i < 3; i++)
         {
             StartCoroutine(MaskDanceLoop((MaskColor)i));
@@ -51,7 +46,6 @@ public class DanceEventPublisher : MonoBehaviour
 
             int danceIndex = Random.Range(1, 5);
             maskDanceIndexEvents[colorIndex]?.RaiseEvent(danceIndex);
-            maskDanceActiveEvents[colorIndex]?.RaiseEvent(true);
             maskDanceActive[colorIndex] = true;
             Debug.Log($"[DanceEvent] MaskDance start color={color} dance={danceIndex} duration={maskDanceDuration:0.0}s", this);
 
@@ -62,7 +56,7 @@ public class DanceEventPublisher : MonoBehaviour
                 yield return null;
             }
 
-            maskDanceActiveEvents[colorIndex]?.RaiseEvent(false);
+            maskDanceIndexEvents[colorIndex]?.RaiseEvent(-1);
             maskDanceActive[colorIndex] = false;
             Debug.Log($"[DanceEvent] MaskDance end color={color}", this);
         }
@@ -93,7 +87,7 @@ public class DanceEventPublisher : MonoBehaviour
         {
             if (maskDanceActive[i])
             {
-                maskDanceActiveEvents[i]?.RaiseEvent(false);
+                maskDanceIndexEvents[i]?.RaiseEvent(-1);
                 maskDanceActive[i] = false;
             }
         }

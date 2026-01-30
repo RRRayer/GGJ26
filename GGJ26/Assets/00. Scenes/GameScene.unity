@@ -1376,10 +1376,6 @@ MonoBehaviour:
   maskDanceDuration: 3
   groupDanceInterval: 30
   groupDanceDuration: 10
-  maskDanceActiveEvents:
-  - {fileID: 11400000, guid: 34262afc5d6fffa449000d8b22b666df, type: 2}
-  - {fileID: 11400000, guid: e1beaed332aa3304c9cafd797908fb3f, type: 2}
-  - {fileID: 11400000, guid: 4796a518384162248adbad1e5753dd8e, type: 2}
   maskDanceIndexEvents:
   - {fileID: 11400000, guid: 455fcfc713ebbea40a2355c6b9a7581e, type: 2}
   - {fileID: 11400000, guid: bff2d00913296dc43a8c646622157e62, type: 2}
@@ -1759,10 +1755,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 658301028}
     m_Modifications:
-    - target: {fileID: 691463538723954156, guid: 1ff92bc27d42b7740945bbc1d789e223, type: 3}
-      propertyPath: OnMaskDanceStart
-      value: 
-      objectReference: {fileID: 11400000, guid: 34262afc5d6fffa449000d8b22b666df, type: 2}
     - target: {fileID: 2100474120000197621, guid: 1ff92bc27d42b7740945bbc1d789e223, type: 3}
       propertyPath: SortKey
       value: 1881494605
