@@ -27,6 +27,7 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
     public bool IsMatchmaking => isMatchmaking;
 
     private NetworkRunner runner;
+    private GameObject runnerObject;
     private bool isStarting = false;
     private bool isMatchmaking = false;
     private bool cancelRequested = false;
@@ -34,6 +35,12 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
 
     private void Awake()
     {
+        var existingRunner = GetComponent<NetworkRunner>();
+        if (existingRunner != null)
+        {
+            Destroy(existingRunner);
+        }
+
         EnsureRunner();
     }
 
@@ -69,7 +76,14 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
         RecreateRunner();
 
         runner.AddCallbacks(this);
-        runner.MakeDontDestroyOnLoad(gameObject);
+        if (runnerObject != null)
+        {
+            runner.MakeDontDestroyOnLoad(runnerObject);
+        }
+        else
+        {
+            runner.MakeDontDestroyOnLoad(gameObject);
+        }
 
         var sceneManager = GetComponent<NetworkSceneManagerDefault>();
         var sceneIndex = SceneManager.GetActiveScene().buildIndex;
@@ -131,6 +145,8 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
         {
             return;
         }
+
+        SetMatchmakingState(false);
 
         var gameSceneIndex = SceneUtility.GetBuildIndexByScenePath(gameScenePath);
         if (gameSceneIndex < 0)
@@ -390,38 +406,40 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
 
         await shutdownCompletion.Task;
         shutdownCompletion = null;
+
+        if (runnerObject != null)
+        {
+            Destroy(runnerObject);
+            runnerObject = null;
+        }
+
+        runner = null;
     }
 
     private void EnsureRunner()
     {
-        runner = GetComponent<NetworkRunner>();
-        if (runner == null)
+        if (runner != null)
         {
-            runner = gameObject.AddComponent<NetworkRunner>();
+            return;
         }
 
+        runnerObject = new GameObject("FusionRunner");
+        DontDestroyOnLoad(runnerObject);
+        runner = runnerObject.AddComponent<NetworkRunner>();
         runner.ProvideInput = true;
-
-        if (GetComponent<NetworkSceneManagerDefault>() == null)
-        {
-            gameObject.AddComponent<NetworkSceneManagerDefault>();
-        }
+        runnerObject.AddComponent<NetworkSceneManagerDefault>();
     }
 
     private void RecreateRunner()
     {
-        if (runner != null)
+        if (runnerObject != null)
         {
-            Destroy(runner);
+            Destroy(runnerObject);
+            runnerObject = null;
         }
 
-        runner = gameObject.AddComponent<NetworkRunner>();
-        runner.ProvideInput = true;
-
-        if (GetComponent<NetworkSceneManagerDefault>() == null)
-        {
-            gameObject.AddComponent<NetworkSceneManagerDefault>();
-        }
+        runner = null;
+        EnsureRunner();
     }
 
     private void SetMatchmakingState(bool value)

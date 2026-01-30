@@ -547,6 +547,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9409d948ea25ec149bc96905ab9fdc15, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  OnMaskDanceStart: {fileID: 11400000, guid: 5bc392c9a1e6c724da8e9b9a47f1629d, type: 2}
+  OnGroupDanceStart: {fileID: 11400000, guid: 2f392a79a9c07cb4d84bbadf00f5947a, type: 2}
   stoppingDistance: 1.5
   WalkDuration:
   - 4

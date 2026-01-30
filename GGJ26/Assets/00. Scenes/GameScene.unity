@@ -1342,6 +1342,59 @@ ReflectionProbe:
   m_UseOcclusionCulling: 1
   m_Importance: 1
   m_CustomBakedTexture: {fileID: 0}
+--- !u!1 &1819755679
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1819755681}
+  - component: {fileID: 1819755680}
+  m_Layer: 0
+  m_Name: DanceEventPublisher
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1819755680
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1819755679}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 862b74c0876d18048b8f91b3bc63ae02, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maskDanceMinInterval: 8
+  maskDanceMaxInterval: 12
+  maskDanceDuration: 3
+  groupDanceInterval: 30
+  groupDanceDuration: 10
+  maskDanceActiveEvent: {fileID: 11400000, guid: 5bc392c9a1e6c724da8e9b9a47f1629d, type: 2}
+  maskDanceColorEvent: {fileID: 11400000, guid: 31f892e853954db4e854a8fd4eb93990, type: 2}
+  maskDanceIndexEvent: {fileID: 11400000, guid: bff2d00913296dc43a8c646622157e62, type: 2}
+  groupDanceActiveEvent: {fileID: 11400000, guid: 2f392a79a9c07cb4d84bbadf00f5947a, type: 2}
+--- !u!4 &1819755681
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1819755679}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 147.83936, y: 19.284216, z: 93.978}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1979352518
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2069,3 +2122,4 @@ SceneRoots:
   - {fileID: 746329221}
   - {fileID: 1121192888}
   - {fileID: 858449456}
+  - {fileID: 1819755681}

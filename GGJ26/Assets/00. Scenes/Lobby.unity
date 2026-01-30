@@ -1101,7 +1101,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   sessionName: GGJ27
-  maxPlayers: 2
+  maxPlayers: 1
   gameScenePath: Assets/00. Scenes/GameScene.unity
   autoStartOnAwake: 0
   playerPrefab: {fileID: 3978347823390045238, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
