@@ -1,0 +1,11 @@
+fileFormatVersion: 2
+<<<<<<<< HEAD:GGJ26/Assets/03. Prefabs/UI/UI Canvas.prefab.meta
+guid: f46531d753859f247b47dda185b9f879
+========
+guid: 4ef68a77587ca894ebf74c54d9f6bdc7
+>>>>>>>> 82c1b47 (Dancing 이미지 그린거 추가 -> Prefab/UI/DancingFrame으로 만들어 놓음):GGJ26/Assets/03. Prefabs/UI/DancingFrame.prefab.meta
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

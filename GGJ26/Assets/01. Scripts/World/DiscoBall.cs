@@ -56,24 +56,11 @@ public class DiscoBall : MonoBehaviour
         if (globalLight == null) // If globalLight is not assigned in the Inspector
         {
             // Try to find a Light2D component in the scene first
-            globalLight = FindObjectOfType<Light>();
+            globalLight = GameObject.Find("GlobalLight").GetComponent<Light>();
             
-            if (globalLight != null)
+            if (globalLight == null)
             {
-                Debug.LogWarning("DiscoBall: GlobalLight2D was automatically found in the scene.");
-            }
-            else
-            {
-                // If no Light2D, try to find a regular Light component
-                globalLight = FindObjectOfType<Light>();
-                if (globalLight != null)
-                {
-                    Debug.LogWarning("DiscoBall: GlobalLight (3D Light) was automatically found in the scene.");
-                }
-                else
-                {
-                    Debug.LogError("DiscoBall: GlobalLight (Light or Light2D) not assigned and not found in scene. Disco lighting effects may not work correctly.");
-                }
+                Debug.LogWarning("DiscoBall: GlobalLight was not automatically found in the scene.");
             }
         }
         
@@ -95,6 +82,8 @@ public class DiscoBall : MonoBehaviour
                 _logicalLightGroups[i % numberOfGroups].Add(allSpotlights[i]);
             }
         }
+
+        discoObject.SetActive(false);
     }
 
     private void OnEnable()
