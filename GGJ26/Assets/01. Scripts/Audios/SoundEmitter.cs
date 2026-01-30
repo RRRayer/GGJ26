@@ -52,6 +52,26 @@ public class SoundEmitter : MonoBehaviour
         return audioSource.loop;
     }
 
+    public void Pause()
+    {
+        audioSource.Pause();
+    }
+
+    public void Resume()
+    {
+        audioSource.UnPause();
+    }
+
+    public void SetVolume(float volume)
+    {
+        audioSource.volume = Mathf.Clamp01(volume);
+    }
+
+    public float GetVolume()
+    {
+        return audioSource.volume;
+    }
+
     /// <summary>
     /// AudioSource 종료
     /// </summary>

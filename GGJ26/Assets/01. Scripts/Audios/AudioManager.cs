@@ -185,4 +185,57 @@ public class AudioManager : MonoBehaviour
         soundEmitter.OnSoundFinishedPlaying -= StopMusicEmitter;
         pool.Return(soundEmitter);
     }
+
+    public SoundEmitter PlayLoopingMusic(AudioCueSO audioCue, AudioConfigurationSO audioConfiguration, Vector3 position)
+    {
+        if (audioCue == null || audioConfiguration == null)
+        {
+            return null;
+        }
+
+        SoundEmitter soundEmitter = pool.Request();
+        soundEmitter.PlayAudioClip(audioCue.GetClip(), audioConfiguration, true, position);
+        return soundEmitter;
+    }
+
+    public void StopEmitter(SoundEmitter soundEmitter)
+    {
+        if (soundEmitter == null)
+        {
+            return;
+        }
+
+        soundEmitter.Stop();
+        pool.Return(soundEmitter);
+    }
+
+    public void PauseEmitter(SoundEmitter soundEmitter)
+    {
+        if (soundEmitter == null)
+        {
+            return;
+        }
+
+        soundEmitter.Pause();
+    }
+
+    public void ResumeEmitter(SoundEmitter soundEmitter)
+    {
+        if (soundEmitter == null)
+        {
+            return;
+        }
+
+        soundEmitter.Resume();
+    }
+
+    public void SetEmitterVolume(SoundEmitter soundEmitter, float volume)
+    {
+        if (soundEmitter == null)
+        {
+            return;
+        }
+
+        soundEmitter.SetVolume(volume);
+    }
 }

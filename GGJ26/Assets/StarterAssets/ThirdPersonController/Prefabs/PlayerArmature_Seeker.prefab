@@ -1115,6 +1115,10 @@ MonoBehaviour:
   crosshairColor: {r: 1, g: 1, b: 1, a: 1}
   hitEffectPrefab: {fileID: 2049132443587695705, guid: fa6608f60ce2e9f49a630de263c274c1, type: 3}
   hitEffectLifetime: 1.5
+  sfxEventChannel: {fileID: 11400000, guid: 06d6e7e2f1efcf34091297cc2951787b, type: 2}
+  sfxConfiguration: {fileID: 11400000, guid: 854501da1c4d88b498813056f7cc098d, type: 2}
+  shootSfxCue: {fileID: 11400000, guid: 07ce1e08503ce9e4ab531c18151365e7, type: 2}
+  hitSfxCue: {fileID: 11400000, guid: 83639e1cdc0b7644dbaaf8619be44c49, type: 2}
 --- !u!114 &9100000000000000009
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1253,6 +1257,10 @@ MonoBehaviour:
   look: {x: 0, y: 0}
   jump: 0
   sprint: 0
+  dance1: 0
+  dance2: 0
+  dance3: 0
+  dance4: 0
   analogMovement: 0
   cursorLocked: 1
   cursorInputForLook: 1
@@ -1458,6 +1466,50 @@ MonoBehaviour:
   bottomClamp: -30
   cameraAngleOverride: 0
   lockCameraPosition: 0
+  useSeekerCameraProfile: 1
+  seekerCameraDistance: 3
+  seekerCameraSide: 0
+  seekerShoulderOffset: {x: 0, y: 0.5, z: 0}
+  seekerVerticalArmLength: 0
+--- !u!114 &9100000000000000011
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4416926081852918481}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6aa5d0c32c6f4ad4b032c2f897cd5c9e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _IsSeeker:
+    _value: 0
+--- !u!114 &9100000000000000010
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4416926081852918481}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 21c2b1a8e8c8443aa04a62b0e7c2d5b1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  role: {fileID: 9100000000000000011}
+  stunGun: {fileID: 9100000000000000008}
+  seekerVisualRoot: {fileID: 0}
+  normalVisualRoot: {fileID: 0}
+  maskObjects:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  maskRenderer: {fileID: 0}
+  maskMaterials:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
 --- !u!1 &4523139366846529165
 GameObject:
   m_ObjectHideFlags: 0
@@ -2938,45 +2990,3 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2599833186509229834, guid: 427a0306271edd84fbc7d3ebc210453a, type: 3}
   m_PrefabInstance: {fileID: 7593580857930403632}
   m_PrefabAsset: {fileID: 0}
-
---- !u!114 &9100000000000000011
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4416926081852918481}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6aa5d0c32c6f4ad4b032c2f897cd5c9e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _IsSeeker: 0
-  _RoleAssigned: 0
-  _MaskColorIndex: 0
-  _MaskAssigned: 0
---- !u!114 &9100000000000000010
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4416926081852918481}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 21c2b1a8e8c8443aa04a62b0e7c2d5b1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  role: {fileID: 9100000000000000011}
-  stunGun: {fileID: 9100000000000000008}
-  seekerVisualRoot: {fileID: 0}
-  normalVisualRoot: {fileID: 0}
-  maskObjects:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  maskRenderer: {fileID: 0}
-  maskMaterials:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}

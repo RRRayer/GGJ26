@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &4444374621204422886
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8165961094028214301}
+  - component: {fileID: 4824350945172697271}
+  m_Layer: 0
+  m_Name: GameAudioController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8165961094028214301
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4444374621204422886}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -5.648192, y: -2.1413927, z: 2.6370368}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4824350945172697271
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4444374621204422886}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bf8a5914823f2d44290691ec3f8edf8a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sfxEventChannel: {fileID: 11400000, guid: 06d6e7e2f1efcf34091297cc2951787b, type: 2}
+  musicConfiguration: {fileID: 11400000, guid: ec1113149d8f0704eb401a9991df5a3b, type: 2}
+  sfxConfiguration: {fileID: 11400000, guid: 854501da1c4d88b498813056f7cc098d, type: 2}
+  normalBgmCue: {fileID: 11400000, guid: 72125ee6be55b894b8f1d1c115b39c2d, type: 2}
+  groupDanceBgmCue: {fileID: 11400000, guid: 7d19dac6ad8042d40b78f10d7dbfe2a1, type: 2}
+  victorySfxCue: {fileID: 11400000, guid: f2aee1da9fb16804f9feb9902c751c1e, type: 2}
+  defeatSfxCue: {fileID: 11400000, guid: cea53dc477d3a6747a76662e3ade2411, type: 2}
+  startDiscoEvent: {fileID: 11400000, guid: 77aee14471927bf478b9875f59796765, type: 2}
+  stopDiscoEvent: {fileID: 11400000, guid: 2616eaedb6373ca47844971b5dada477, type: 2}
+  gameResultEvent: {fileID: 11400000, guid: 5a5f993efd703a642b33eede934483b7, type: 2}
+  musicFadeSeconds: 0.5

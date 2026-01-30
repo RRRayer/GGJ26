@@ -16,8 +16,24 @@ public class FusionThirdPersonCamera : MonoBehaviour
     [SerializeField] private float cameraAngleOverride = 0.0f;
     [SerializeField] private bool lockCameraPosition = false;
 
+    [Header("Seeker Camera")]
+    [SerializeField] private bool useSeekerCameraProfile = true;
+    [SerializeField] private float seekerCameraDistance = 3.0f;
+    [SerializeField] private float seekerCameraSide = 0.0f;
+    [SerializeField] private Vector3 seekerShoulderOffset = Vector3.zero;
+    [SerializeField] private float seekerVerticalArmLength = 0.0f;
+
     private StarterAssetsInputs input;
     private PlayerInput playerInput;
+    private PlayerRole role;
+    private CinemachineVirtualCamera boundCamera;
+    private Cinemachine3rdPersonFollow thirdPersonFollow;
+    private bool cameraDefaultsCached;
+    private float defaultCameraDistance;
+    private float defaultCameraSide;
+    private Vector3 defaultShoulderOffset;
+    private float defaultVerticalArmLength;
+    private bool lastIsSeeker;
     private float cinemachineTargetYaw;
     private float cinemachineTargetPitch;
     private bool isBound;
@@ -36,6 +52,7 @@ public class FusionThirdPersonCamera : MonoBehaviour
     {
         input = GetComponent<StarterAssetsInputs>();
         playerInput = GetComponent<PlayerInput>();
+        role = GetComponent<PlayerRole>();
 
         if (cameraTarget == null)
         {
@@ -80,6 +97,8 @@ public class FusionThirdPersonCamera : MonoBehaviour
         cinemachineTargetPitch = ClampAngle(cinemachineTargetPitch, bottomClamp, topClamp);
 
         cameraTarget.rotation = Quaternion.Euler(cinemachineTargetPitch + cameraAngleOverride, cinemachineTargetYaw, 0.0f);
+
+        UpdateCameraProfile();
     }
 
     private void BindCameraTargets()
@@ -125,7 +144,63 @@ public class FusionThirdPersonCamera : MonoBehaviour
 
         followCamera.Follow = cameraTarget;
         followCamera.LookAt = cameraTarget;
+        boundCamera = followCamera;
+        thirdPersonFollow = boundCamera.GetCinemachineComponent<Cinemachine3rdPersonFollow>();
+        CacheDefaultCameraProfile();
+        UpdateCameraProfile();
         isBound = true;
+    }
+
+    private void CacheDefaultCameraProfile()
+    {
+        if (cameraDefaultsCached || thirdPersonFollow == null)
+        {
+            return;
+        }
+
+        defaultCameraDistance = thirdPersonFollow.CameraDistance;
+        defaultCameraSide = thirdPersonFollow.CameraSide;
+        defaultShoulderOffset = thirdPersonFollow.ShoulderOffset;
+        defaultVerticalArmLength = thirdPersonFollow.VerticalArmLength;
+        cameraDefaultsCached = true;
+    }
+
+    private void UpdateCameraProfile()
+    {
+        if (useSeekerCameraProfile == false || role == null || role.HasRoleAssigned() == false)
+        {
+            return;
+        }
+
+        bool isSeeker = role.IsSeeker;
+        if (isSeeker == lastIsSeeker && cameraDefaultsCached)
+        {
+            return;
+        }
+
+        if (thirdPersonFollow == null)
+        {
+            return;
+        }
+
+        CacheDefaultCameraProfile();
+
+        if (isSeeker)
+        {
+            thirdPersonFollow.CameraDistance = seekerCameraDistance;
+            thirdPersonFollow.CameraSide = seekerCameraSide;
+            thirdPersonFollow.ShoulderOffset = seekerShoulderOffset;
+            thirdPersonFollow.VerticalArmLength = seekerVerticalArmLength;
+        }
+        else
+        {
+            thirdPersonFollow.CameraDistance = defaultCameraDistance;
+            thirdPersonFollow.CameraSide = defaultCameraSide;
+            thirdPersonFollow.ShoulderOffset = defaultShoulderOffset;
+            thirdPersonFollow.VerticalArmLength = defaultVerticalArmLength;
+        }
+
+        lastIsSeeker = isSeeker;
     }
 
     private static float ClampAngle(float angle, float min, float max)

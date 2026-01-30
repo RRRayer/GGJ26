@@ -16,6 +16,11 @@ public class StunGun : NetworkBehaviour
     [Header("Hit Effect")]
     [SerializeField] private GameObject hitEffectPrefab;
     [SerializeField] private float hitEffectLifetime = 1.5f;
+    [Header("Audio")]
+    [SerializeField] private AudioCueEventChannelSO sfxEventChannel;
+    [SerializeField] private AudioConfigurationSO sfxConfiguration;
+    [SerializeField] private AudioCueSO shootSfxCue;
+    [SerializeField] private AudioCueSO hitSfxCue;
 
     private PlayerRole role;
     private float lastFireTime = -999f;
@@ -66,6 +71,7 @@ public class StunGun : NetworkBehaviour
         }
 
         lastFireTime = Time.time;
+        PlaySfx(shootSfxCue, transform.position);
         Ray ray = new Ray(mainCamera.transform.position, mainCamera.transform.forward);
         if (Physics.Raycast(ray, out RaycastHit hit, range, hitMask, QueryTriggerInteraction.Ignore) == false)
         {
@@ -73,6 +79,7 @@ public class StunGun : NetworkBehaviour
         }
 
         SpawnHitEffect(hit.point, hit.normal);
+        RpcPlayHitSfx(hit.point);
 
         var target = hit.collider.GetComponentInParent<PlayerElimination>();
         if (target == null)
@@ -101,6 +108,22 @@ public class StunGun : NetworkBehaviour
         {
             Destroy(effect, hitEffectLifetime);
         }
+    }
+
+    private void PlaySfx(AudioCueSO cue, Vector3 position)
+    {
+        if (sfxEventChannel == null || cue == null)
+        {
+            return;
+        }
+
+        sfxEventChannel.RaisePlayEvent(cue, sfxConfiguration, position);
+    }
+
+    [Rpc(RpcSources.InputAuthority, RpcTargets.All)]
+    private void RpcPlayHitSfx(Vector3 position)
+    {
+        PlaySfx(hitSfxCue, position);
     }
 
     private void UpdateCrosshair()
