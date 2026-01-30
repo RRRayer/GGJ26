@@ -7,6 +7,7 @@ using Fusion.Sockets;
 using StarterAssets;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.InputSystem;
 
 public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
 {
@@ -334,6 +335,8 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
             return;
         }
 
+        var playerInput = playerObject.GetComponent<PlayerInput>();
+
         PlayerInputData data = default;
         data.Move = starterInputs.move;
         data.Look = starterInputs.look;
@@ -341,19 +344,36 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
         data.Sprint = starterInputs.sprint;
 
         data.danceIndex = -1;
-        if (starterInputs.dance1) data.danceIndex = 0;
-        else if (starterInputs.dance2) data.danceIndex = 1;
-        else if (starterInputs.dance3) data.danceIndex = 2;
-        else if (starterInputs.dance4) data.danceIndex = 3;
+        if (playerInput != null && playerInput.actions != null)
+        {
+            if (IsDancePressed(playerInput, "Dance1")) data.danceIndex = 0;
+            else if (IsDancePressed(playerInput, "Dance2")) data.danceIndex = 1;
+            else if (IsDancePressed(playerInput, "Dance3")) data.danceIndex = 2;
+            else if (IsDancePressed(playerInput, "Dance4")) data.danceIndex = 3;
+        }
+        else
+        {
+            if (starterInputs.dance1) data.danceIndex = 0;
+            else if (starterInputs.dance2) data.danceIndex = 1;
+            else if (starterInputs.dance3) data.danceIndex = 2;
+            else if (starterInputs.dance4) data.danceIndex = 3;
+        }
 
         input.Set(data);
 
         // Consume one-shot inputs so they don't latch across ticks.
         starterInputs.jump = false;
-        starterInputs.dance1 = false;
-        starterInputs.dance2 = false;
-        starterInputs.dance3 = false;
-        starterInputs.dance4 = false;
+    }
+
+    private static bool IsDancePressed(PlayerInput playerInput, string actionName)
+    {
+        if (playerInput == null || playerInput.actions == null)
+        {
+            return false;
+        }
+
+        var action = playerInput.actions[actionName];
+        return action != null && action.IsPressed();
     }
 
     private NetworkObject FindLocalPlayerObject(NetworkRunner runner)

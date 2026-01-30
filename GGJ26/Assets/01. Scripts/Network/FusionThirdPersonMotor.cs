@@ -46,6 +46,7 @@ public class FusionThirdPersonMotor : NetworkBehaviour
     private Camera mainCamera;
     private bool isGrounded;
     private PlayerRole role;
+    private int lastDanceIndex = -1;
 
     private void Awake()
     {
@@ -113,18 +114,23 @@ public class FusionThirdPersonMotor : NetworkBehaviour
             return;
         }
         
-        // Handle dance input first.
-        // If a dance key is pressed, toggle the dance state.
-        if (input.danceIndex != -1)
+        // Handle dance input first (hold-to-dance, edge-triggered).
+        if (input.danceIndex != lastDanceIndex)
         {
-            if (IsDancing)
-            {
-                StopDance();
-            }
-            else
+            if (lastDanceIndex == -1 && input.danceIndex != -1)
             {
                 StartDance(input.danceIndex);
             }
+            else if (input.danceIndex == -1 && lastDanceIndex != -1)
+            {
+                StopDance();
+            }
+            else if (input.danceIndex != -1)
+            {
+                StartDance(input.danceIndex);
+            }
+
+            lastDanceIndex = input.danceIndex;
         }
 
         // If we are dancing, we should not process any movement input.

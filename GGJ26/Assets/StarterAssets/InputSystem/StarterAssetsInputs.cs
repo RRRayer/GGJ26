@@ -24,6 +24,16 @@ namespace StarterAssets
 		public bool cursorLocked = true;
 		public bool cursorInputForLook = true;
 
+		private void OnEnable()
+		{
+			ResetDanceInputs();
+		}
+
+		private void OnDisable()
+		{
+			ResetDanceInputs();
+		}
+
 #if ENABLE_INPUT_SYSTEM
 		public void OnMove(InputValue value)
 		{
@@ -50,34 +60,22 @@ namespace StarterAssets
 
 		public void OnDance1(InputValue value)
 		{
-			if (value.isPressed)
-			{
-				dance1 = true;
-			}
+			dance1 = value.isPressed;
 		}
 		
 		public void OnDance2(InputValue value)
 		{
-			if (value.isPressed)
-			{
-				dance2 = true;
-			}
+			dance2 = value.isPressed;
 		}
 
 		public void OnDance3(InputValue value)
 		{
-			if (value.isPressed)
-			{
-				dance3 = true;
-			}
+			dance3 = value.isPressed;
 		}
 
 		public void OnDance4(InputValue value)
 		{
-			if (value.isPressed)
-			{
-				dance4 = true;
-			}
+			dance4 = value.isPressed;
 		}
 #endif
 
@@ -100,6 +98,14 @@ namespace StarterAssets
 		public void SprintInput(bool newSprintState)
 		{
 			sprint = newSprintState;
+		}
+
+		private void ResetDanceInputs()
+		{
+			dance1 = false;
+			dance2 = false;
+			dance3 = false;
+			dance4 = false;
 		}
 
 		private void OnApplicationFocus(bool hasFocus)
