@@ -99,8 +99,5 @@ public class GreenNPC : BaseNPC
         }
     }
 
-    protected override void ExecuteMaskDance()
-    {
-        throw new System.NotImplementedException();
-    }
+
 }

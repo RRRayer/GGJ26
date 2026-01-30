@@ -117,9 +117,5 @@ public class RedNPC : BaseNPC
         }
     }
 
-    protected override void ExecuteMaskDance()
-    {
-        throw new System.NotImplementedException();
-    }
 }
 

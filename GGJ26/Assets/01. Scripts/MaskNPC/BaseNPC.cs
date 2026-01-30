@@ -13,6 +13,9 @@ public abstract class BaseNPC : MonoBehaviour
     protected NavMeshAgent agent;
     protected WanderPointProvider wanderProvider;
 
+    [Header("이벤트 채널 - Listening to")]
+    [SerializeField] private BoolEventChannelSO OnMaskDanceStart;
+    [SerializeField] private BoolEventChannelSO OnGroupDanceStart;
     public enum ActionState
     {
         // 가면 행동
@@ -25,7 +28,7 @@ public abstract class BaseNPC : MonoBehaviour
         GroupDance
     }
 
-    private ActionState currentState = ActionState.GroupDance;
+    private ActionState currentState;
 
 
     /// <summary>
@@ -53,7 +56,8 @@ public abstract class BaseNPC : MonoBehaviour
 
     private void GameStart()
     {
-        currentState = ActionState.GroupDance;
+        OnGroupDanceStart.OnEventRaised += ExecuteGroupDance;
+        OnMaskDanceStart.OnEventRaised += ExecuteMaskDance;
     }
 
     /// <summary>
@@ -66,14 +70,6 @@ public abstract class BaseNPC : MonoBehaviour
         {
             ExecuteMaskBehavior();
         }
-        else if (currentState == ActionState.MaskDance)
-        {
-            ExecuteMaskDance();
-        }
-        else if (currentState == ActionState.GroupDance)
-        {
-            ExecuteGroupDance();
-        }
     }
 
     /// <summary>
@@ -82,11 +78,36 @@ public abstract class BaseNPC : MonoBehaviour
     /// </summary>
     protected abstract void ExecuteMaskBehavior();
 
-    protected abstract void ExecuteMaskDance();
-    protected void ExecuteGroupDance()
+    protected void ExecuteMaskDance(bool isStart)
     {
+        if (isStart)
+        {
+            currentState = ActionState.MaskDance;
 
+            NpcController.StartDance(0);    
+        }
+        else
+        {
+            currentState = ActionState.MaskBehavior;
+            NpcController.StopDance();
+        }
     }
+    protected void ExecuteGroupDance(bool isStart)
+    {
+        int danceIndex = Random.Range(0, 4); // 0에서 3 사이의 랜덤 인덱스 선택
+        if (isStart)
+        {
+            currentState = ActionState.GroupDance;
+
+            NpcController.StartDance(danceIndex);    
+        }
+        else
+        {
+            currentState = ActionState.MaskBehavior;
+            NpcController.StopDance();
+        }
+    }
+
     public float RandomRangePicker(float[] range)
     {
         if (range.Length != 2)
