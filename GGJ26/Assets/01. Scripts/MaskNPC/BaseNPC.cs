@@ -49,15 +49,38 @@ public abstract class BaseNPC : MonoBehaviour
     }
 
 
-    private void Start()
+    private void OnEnable()
     {
-        GameStart();
+        if (OnGroupDanceStart != null)
+        {
+            OnGroupDanceStart.OnEventRaised += ExecuteGroupDance;
+        }
+        else
+        {
+            Debug.LogWarning("[BaseNPC] OnGroupDanceStart not assigned.", this);
+        }
+
+        if (OnMaskDanceStart != null)
+        {
+            OnMaskDanceStart.OnEventRaised += ExecuteMaskDance;
+        }
+        else
+        {
+            Debug.LogWarning("[BaseNPC] OnMaskDanceStart not assigned.", this);
+        }
     }
 
-    private void GameStart()
+    private void OnDisable()
     {
-        OnGroupDanceStart.OnEventRaised += ExecuteGroupDance;
-        OnMaskDanceStart.OnEventRaised += ExecuteMaskDance;
+        if (OnGroupDanceStart != null)
+        {
+            OnGroupDanceStart.OnEventRaised -= ExecuteGroupDance;
+        }
+
+        if (OnMaskDanceStart != null)
+        {
+            OnMaskDanceStart.OnEventRaised -= ExecuteMaskDance;
+        }
     }
 
     /// <summary>
@@ -80,30 +103,46 @@ public abstract class BaseNPC : MonoBehaviour
 
     protected void ExecuteMaskDance(bool isStart)
     {
+        if (NpcController == null)
+        {
+            Debug.LogWarning("[BaseNPC] NpcController missing for mask dance.", this);
+            return;
+        }
+
         if (isStart)
         {
             currentState = ActionState.MaskDance;
 
-            NpcController.StartDance(0);    
+            NpcController.StartDance(0);
+            Debug.Log("[BaseNPC] Mask dance start (index 0).", this);
         }
         else
         {
             currentState = ActionState.MaskBehavior;
             NpcController.StopDance();
+            Debug.Log("[BaseNPC] Mask dance end.", this);
         }
     }
     protected void ExecuteGroupDance(bool isStart)
     {
+        if (NpcController == null)
+        {
+            Debug.LogWarning("[BaseNPC] NpcController missing for group dance.", this);
+            return;
+        }
+
         int danceIndex = Random.Range(0, 4); // 0에서 3 사이의 랜덤 인덱스 선택
         if (isStart)
         {
             currentState = ActionState.GroupDance;
-            NpcController.StartDance(danceIndex);    
+            NpcController.StartDance(danceIndex);
+            Debug.Log($"[BaseNPC] Group dance start (index {danceIndex}).", this);
         }
         else
         {
             currentState = ActionState.MaskBehavior;
             NpcController.StopDance();
+            Debug.Log("[BaseNPC] Group dance end.", this);
         }
     }
 

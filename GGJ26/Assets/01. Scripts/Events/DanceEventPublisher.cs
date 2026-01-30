@@ -22,6 +22,9 @@ public class DanceEventPublisher : MonoBehaviour
 
     private void Start()
     {
+        Debug.Log(
+            $"[DanceEvent] Publisher start. MaskActive={GetEventName(maskDanceActiveEvent)} MaskColor={GetEventName(maskDanceColorEvent)} MaskIndex={GetEventName(maskDanceIndexEvent)} GroupActive={GetEventName(groupDanceActiveEvent)}",
+            this);
         StartCoroutine(MaskDanceLoop());
         StartCoroutine(GroupDanceLoop());
     }
@@ -69,5 +72,10 @@ public class DanceEventPublisher : MonoBehaviour
             Debug.Log("[DanceEvent] GroupDance end", this);
             isGroupDanceActive = false;
         }
+    }
+
+    private static string GetEventName(ScriptableObject channel)
+    {
+        return channel == null ? "None" : $"{channel.name}#{channel.GetInstanceID()}";
     }
 }
