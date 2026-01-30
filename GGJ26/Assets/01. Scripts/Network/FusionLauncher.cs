@@ -339,10 +339,21 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
         data.Look = starterInputs.look;
         data.Jump = starterInputs.jump;
         data.Sprint = starterInputs.sprint;
+
+        data.danceIndex = -1;
+        if (starterInputs.dance1) data.danceIndex = 0;
+        else if (starterInputs.dance2) data.danceIndex = 1;
+        else if (starterInputs.dance3) data.danceIndex = 2;
+        else if (starterInputs.dance4) data.danceIndex = 3;
+
         input.Set(data);
 
         // Consume one-shot inputs so they don't latch across ticks.
         starterInputs.jump = false;
+        starterInputs.dance1 = false;
+        starterInputs.dance2 = false;
+        starterInputs.dance3 = false;
+        starterInputs.dance4 = false;
     }
 
     private NetworkObject FindLocalPlayerObject(NetworkRunner runner)

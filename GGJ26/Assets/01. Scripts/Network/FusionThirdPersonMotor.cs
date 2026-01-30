@@ -25,6 +25,7 @@ public class FusionThirdPersonMotor : NetworkBehaviour
     [Networked] private float NetHorizontalSpeed { get; set; }
     [Networked] private float NetInputMagnitude { get; set; }
     [Networked] private NetworkBool NetGrounded { get; set; }
+    [Networked] private NetworkBool IsDancing { get; set; }
 
     private CharacterController controller;
     private Animator animator;
@@ -34,6 +35,9 @@ public class FusionThirdPersonMotor : NetworkBehaviour
     private int animIDJump;
     private int animIDFreeFall;
     private int animIDMotionSpeed;
+    private int animIDStartDance;
+    private int animIDStopDance;
+    private int animIDDanceIndex;
     private float rotationVelocity;
     private float fallTimeout = 0.15f;
     private float jumpTimeout = 0.3f;
@@ -64,7 +68,27 @@ public class FusionThirdPersonMotor : NetworkBehaviour
             animIDJump = Animator.StringToHash("Jump");
             animIDFreeFall = Animator.StringToHash("FreeFall");
             animIDMotionSpeed = Animator.StringToHash("MotionSpeed");
+            animIDStartDance = Animator.StringToHash("StartDance");
+            animIDStopDance = Animator.StringToHash("StopDance");
+            animIDDanceIndex = Animator.StringToHash("DanceIndex");
         }
+    }
+
+    public void StartDance(int danceIndex)
+    {
+        if (hasAnimator == false) return;
+
+        IsDancing = true;
+        animator.SetInteger(animIDDanceIndex, danceIndex);
+        animator.SetTrigger(animIDStartDance);
+    }
+
+    public void StopDance()
+    {
+        if (hasAnimator == false) return;
+
+        IsDancing = false;
+        animator.SetTrigger(animIDStopDance);
     }
 
     public override void FixedUpdateNetwork()
@@ -85,6 +109,27 @@ public class FusionThirdPersonMotor : NetworkBehaviour
             {
                 Debug.Log("[FusionThirdPersonMotor] No input for tick", this);
             }
+            ApplyGravity(Vector3.zero);
+            return;
+        }
+        
+        // Handle dance input first.
+        // If a dance key is pressed, toggle the dance state.
+        if (input.danceIndex != -1)
+        {
+            if (IsDancing)
+            {
+                StopDance();
+            }
+            else
+            {
+                StartDance(input.danceIndex);
+            }
+        }
+
+        // If we are dancing, we should not process any movement input.
+        if (IsDancing)
+        {
             ApplyGravity(Vector3.zero);
             return;
         }

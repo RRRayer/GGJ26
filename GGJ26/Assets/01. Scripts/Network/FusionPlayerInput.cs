@@ -7,4 +7,5 @@ public struct PlayerInputData : INetworkInput
     public Vector2 Look;
     public bool Jump;
     public bool Sprint;
+    public int danceIndex;
 }

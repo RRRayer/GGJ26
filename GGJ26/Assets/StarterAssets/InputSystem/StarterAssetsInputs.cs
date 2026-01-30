@@ -12,6 +12,10 @@ namespace StarterAssets
 		public Vector2 look;
 		public bool jump;
 		public bool sprint;
+		public bool dance1;
+		public bool dance2;
+		public bool dance3;
+		public bool dance4;
 
 		[Header("Movement Settings")]
 		public bool analogMovement;
@@ -42,6 +46,38 @@ namespace StarterAssets
 		public void OnSprint(InputValue value)
 		{
 			SprintInput(value.isPressed);
+		}
+
+		public void OnDance1(InputValue value)
+		{
+			if (value.isPressed)
+			{
+				dance1 = true;
+			}
+		}
+		
+		public void OnDance2(InputValue value)
+		{
+			if (value.isPressed)
+			{
+				dance2 = true;
+			}
+		}
+
+		public void OnDance3(InputValue value)
+		{
+			if (value.isPressed)
+			{
+				dance3 = true;
+			}
+		}
+
+		public void OnDance4(InputValue value)
+		{
+			if (value.isPressed)
+			{
+				dance4 = true;
+			}
 		}
 #endif
 
