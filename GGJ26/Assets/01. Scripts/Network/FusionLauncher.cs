@@ -24,26 +24,17 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
     private readonly List<NetworkSpawnPoint> spawnPoints = new List<NetworkSpawnPoint>();
 
     public event Action<bool> MatchmakingStateChanged;
+    public bool IsMatchmaking => isMatchmaking;
 
     private NetworkRunner runner;
     private bool isStarting = false;
     private bool isMatchmaking = false;
     private bool cancelRequested = false;
+    private TaskCompletionSource<bool> shutdownCompletion;
 
     private void Awake()
     {
-        runner = GetComponent<NetworkRunner>();
-        if (runner == null)
-        {
-            runner = gameObject.AddComponent<NetworkRunner>();
-        }
-
-        runner.ProvideInput = true;
-
-        if (GetComponent<NetworkSceneManagerDefault>() == null)
-        {
-            gameObject.AddComponent<NetworkSceneManagerDefault>();
-        }
+        EnsureRunner();
     }
 
     private void Start()
@@ -70,6 +61,13 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
         cancelRequested = false;
         SetMatchmakingState(true);
 
+        if (runner != null && runner.IsRunning)
+        {
+            await RequestShutdownAsync();
+        }
+
+        RecreateRunner();
+
         runner.AddCallbacks(this);
         runner.MakeDontDestroyOnLoad(gameObject);
 
@@ -90,7 +88,10 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
         {
             isStarting = false;
             SetMatchmakingState(false);
-            Debug.LogError($"Fusion StartGame failed: {result.ShutdownReason}");
+            if (result.ShutdownReason != ShutdownReason.OperationCanceled)
+            {
+                Debug.LogError($"Fusion StartGame failed: {result.ShutdownReason}");
+            }
             return;
         }
 
@@ -337,6 +338,10 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
         isStarting = false;
         cancelRequested = false;
         SetMatchmakingState(false);
+        if (shutdownCompletion != null)
+        {
+            shutdownCompletion.TrySetResult(true);
+        }
     }
 
     public void OnInputMissing(NetworkRunner runner, PlayerRef player, NetworkInput input)
@@ -360,12 +365,63 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
         }
 
         cancelRequested = true;
+        isStarting = false;
         if (runner != null && runner.IsRunning)
         {
-            runner.Shutdown();
+            _ = RequestShutdownAsync();
+        }
+        else
+        {
+            cancelRequested = false;
         }
 
         SetMatchmakingState(false);
+    }
+
+    private async Task RequestShutdownAsync()
+    {
+        if (runner == null || runner.IsRunning == false)
+        {
+            return;
+        }
+
+        shutdownCompletion ??= new TaskCompletionSource<bool>();
+        runner.Shutdown();
+
+        await shutdownCompletion.Task;
+        shutdownCompletion = null;
+    }
+
+    private void EnsureRunner()
+    {
+        runner = GetComponent<NetworkRunner>();
+        if (runner == null)
+        {
+            runner = gameObject.AddComponent<NetworkRunner>();
+        }
+
+        runner.ProvideInput = true;
+
+        if (GetComponent<NetworkSceneManagerDefault>() == null)
+        {
+            gameObject.AddComponent<NetworkSceneManagerDefault>();
+        }
+    }
+
+    private void RecreateRunner()
+    {
+        if (runner != null)
+        {
+            Destroy(runner);
+        }
+
+        runner = gameObject.AddComponent<NetworkRunner>();
+        runner.ProvideInput = true;
+
+        if (GetComponent<NetworkSceneManagerDefault>() == null)
+        {
+            gameObject.AddComponent<NetworkSceneManagerDefault>();
+        }
     }
 
     private void SetMatchmakingState(bool value)

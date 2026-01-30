@@ -56,6 +56,7 @@ public class LobbyMatchmakingUI : MonoBehaviour
         if (launcher != null)
         {
             launcher.MatchmakingStateChanged += OnMatchmakingStateChanged;
+            OnMatchmakingStateChanged(launcher.IsMatchmaking);
         }
     }
 
@@ -90,6 +91,11 @@ public class LobbyMatchmakingUI : MonoBehaviour
         if (launcher == null)
         {
             return;
+        }
+
+        if (popupRoot != null)
+        {
+            popupRoot.SetActive(true);
         }
 
         launcher.StartMatchmaking();
