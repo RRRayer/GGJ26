@@ -547,11 +547,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   stoppingDistance: 1.5
   WalkDuration:
-  - 2
+  - 4
   - 5
   RunDuration:
   - 2
-  - 5
+  - 3
 --- !u!1 &2452816787128034741
 GameObject:
   m_ObjectHideFlags: 0
