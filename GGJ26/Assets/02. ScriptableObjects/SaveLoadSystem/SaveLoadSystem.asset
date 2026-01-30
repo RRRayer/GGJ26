@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45e4855fcfe55834f97a164ed16294a5, type: 3}
+  m_Name: SaveLoadSystem
+  m_EditorClassIdentifier: Assembly-CSharp::SaveLoadSystem
+  playerTransformAnchor: {fileID: 11400000, guid: 53649e2f3a8b5f4499d49924ff2c7566, type: 2}
+  settingsSO: {fileID: 11400000, guid: 35b984611af196649a2fb956be924617, type: 2}
+  SaveFileName: save.deepdive

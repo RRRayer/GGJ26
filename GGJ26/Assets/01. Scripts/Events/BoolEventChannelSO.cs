@@ -1,0 +1,13 @@
+using UnityEngine;
+using UnityEngine.Events;
+
+[CreateAssetMenu(fileName = "BoolEventChannelSO", menuName = "Events/Bool")]
+public class BoolEventChannelSO : ScriptableObject
+{
+    public UnityAction<bool> OnEventRaised = delegate { };
+
+    public void RaiseEvent(bool value)
+    {
+        OnEventRaised?.Invoke(value);
+    }
+}
