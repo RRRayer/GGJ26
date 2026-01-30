@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: c5448783c7b44484b84d32fefca7e87b
+timeCreated: 1678488631
+AssetOrigin:
+  serializedVersion: 1
+  productId: 170209
+  packageName: MultiPlay
+  packageVersion: 1.6.0
+  assetPath: Assets/Plugins/MultiPlay/Editor/SceneChangeDetector.cs
+  uploadId: 660521

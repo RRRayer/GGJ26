@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 3bae193a0dc8e6549a77cc01a71f5677
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 170209
+  packageName: MultiPlay
+  packageVersion: 1.6.0
+  assetPath: Assets/Plugins/MultiPlay/README.md
+  uploadId: 660521

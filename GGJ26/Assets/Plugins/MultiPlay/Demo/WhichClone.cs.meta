@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: b4e91bb0e6c3cb24f9d33e83c23aa5eb
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 170209
+  packageName: MultiPlay
+  packageVersion: 1.6.0
+  assetPath: Assets/Plugins/MultiPlay/Demo/WhichClone.cs
+  uploadId: 660521

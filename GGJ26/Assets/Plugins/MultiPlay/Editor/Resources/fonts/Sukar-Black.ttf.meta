@@ -1,0 +1,28 @@
+fileFormatVersion: 2
+guid: cf3829fc565c99d49941606dc5d7f343
+TrueTypeFontImporter:
+  externalObjects: {}
+  serializedVersion: 4
+  fontSize: 16
+  forceTextureCase: -2
+  characterSpacing: 0
+  characterPadding: 1
+  includeFontData: 1
+  fontNames:
+  - Sukar
+  fallbackFontReferences: []
+  customCharacters: 
+  fontRenderingMode: 0
+  ascentCalculationMode: 1
+  useLegacyBoundsCalculation: 0
+  shouldRoundAdvanceValue: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 170209
+  packageName: MultiPlay
+  packageVersion: 1.6.0
+  assetPath: Assets/Plugins/MultiPlay/Editor/Resources/fonts/Sukar-Black.ttf
+  uploadId: 660521

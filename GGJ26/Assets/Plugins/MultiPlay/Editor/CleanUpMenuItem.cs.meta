@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: b9bf746dd26b4dc8b7eea4dbc50815a9
+timeCreated: 1676239264
+AssetOrigin:
+  serializedVersion: 1
+  productId: 170209
+  packageName: MultiPlay
+  packageVersion: 1.6.0
+  assetPath: Assets/Plugins/MultiPlay/Editor/CleanUpMenuItem.cs
+  uploadId: 660521

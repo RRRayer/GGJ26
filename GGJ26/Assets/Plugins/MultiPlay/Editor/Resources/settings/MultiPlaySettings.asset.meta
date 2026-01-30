@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 6de29af0a7b2a964eaa2a005704c3768
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 170209
+  packageName: MultiPlay
+  packageVersion: 1.6.0
+  assetPath: Assets/Plugins/MultiPlay/Editor/Resources/settings/MultiPlaySettings.asset
+  uploadId: 660521

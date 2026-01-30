@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: ce0fd3984a4c9e24fb36237af8d38c95
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 170209
+  packageName: MultiPlay
+  packageVersion: 1.6.0
+  assetPath: Assets/Plugins/MultiPlay/Demo/Demo.unity
+  uploadId: 660521

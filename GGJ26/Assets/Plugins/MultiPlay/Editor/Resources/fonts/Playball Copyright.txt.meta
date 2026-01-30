@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 9776f4fa7c3c2f248b0d65f5e0cd9c74
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 170209
+  packageName: MultiPlay
+  packageVersion: 1.6.0
+  assetPath: Assets/Plugins/MultiPlay/Editor/Resources/fonts/Playball Copyright.txt
+  uploadId: 660521
