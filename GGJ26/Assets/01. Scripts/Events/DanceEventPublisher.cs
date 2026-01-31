@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using Fusion;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -10,7 +11,7 @@ public struct DanceInfo
     public MaskColor Color;
 }
 
-public class DanceEventPublisher : MonoBehaviour
+public class DanceEventPublisher : NetworkBehaviour
 {
     // UI에게 다음 댄스 정보를 전달할 새로운 static 이벤트
     public static event Action<DanceInfo> OnNextDanceAnnounced;
@@ -37,8 +38,13 @@ public class DanceEventPublisher : MonoBehaviour
     private bool isGroupDanceActive;
     private readonly bool[] maskDanceActive = new bool[3];
 
-    private void Start()
+    public override void Spawned()
     {
+        if (Object.HasStateAuthority == false)
+        {
+            return;
+        }
+
         for (int i = 0; i < 3; i++)
         {
             StartCoroutine(MaskDanceLoop((MaskColor)i));
@@ -58,7 +64,7 @@ public class DanceEventPublisher : MonoBehaviour
         {
             // 1. 다음 댄스 정보를 미리 결정하고 UI에 알립니다.
             int danceIndex = Random.Range(1, 5);
-            OnNextDanceAnnounced?.Invoke(new DanceInfo { DanceIndex = danceIndex, Color = color });
+            RpcAnnounceNextDance(colorIndex, danceIndex);
 
             // 2. 댄스가 실제로 시작하기 전까지 대기합니다. 이 시간이 UI 큐에 표시되는 시간이 됩니다.
             //    (여기서는 고정된 짧은 시간을 주거나, 기존처럼 랜덤값을 사용할 수 있습니다. 일단 3초로 고정하겠습니다.)
@@ -71,9 +77,7 @@ public class DanceEventPublisher : MonoBehaviour
             }
             
             // 4. 댄스를 시작합니다.
-            maskDanceIndexEvents[colorIndex]?.RaiseEvent(danceIndex);
-            maskDanceActive[colorIndex] = true;
-            Debug.Log($"[DanceEvent] MaskDance start color={color} dance={danceIndex} duration={maskDanceDuration:0.0}s", this);
+            RpcStartMaskDance(colorIndex, danceIndex, maskDanceDuration);
 
             // 5. 댄스 지속 시간만큼 기다립니다.
             float elapsed = 0f;
@@ -84,10 +88,7 @@ public class DanceEventPublisher : MonoBehaviour
             }
 
             // 6. 댄스를 종료하고, UI가 큐에서 아이템을 소비하도록 알립니다.
-            maskDanceIndexEvents[colorIndex]?.RaiseEvent(-1);
-            maskDanceActive[colorIndex] = false;
-            Debug.Log($"[DanceEvent] MaskDance end color={color}", this);
-            OnMaskDanceEnded?.Invoke();
+            RpcStopMaskDance(colorIndex);
 
             // 7. --- 핵심 변경점 ---
             // 다음 댄스를 예고하기 전까지 충분한 시간(쿨다운)을 기다립니다.
@@ -102,19 +103,69 @@ public class DanceEventPublisher : MonoBehaviour
         {
             yield return new WaitForSeconds(groupDanceInterval);
 
-            isGroupDanceActive = true;
-            StopAllMaskDances();
-            groupDanceActiveEvent?.RaiseEvent(true);
-            startDiscoEvent?.RaiseEvent();
-            Debug.Log($"[DanceEvent] GroupDance start duration={groupDanceDuration:0.0}s", this);
+            RpcStartGroupDance(groupDanceDuration);
 
             yield return new WaitForSeconds(groupDanceDuration);
 
-            groupDanceActiveEvent?.RaiseEvent(false);
-            stopDiscoEvent?.RaiseEvent();
-            Debug.Log("[DanceEvent] GroupDance end", this);
-            isGroupDanceActive = false;
+            RpcStopGroupDance();
         }
+    }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RpcAnnounceNextDance(int colorIndex, int danceIndex)
+    {
+        if (colorIndex < 0 || colorIndex >= maskDanceIndexEvents.Length)
+        {
+            return;
+        }
+
+        OnNextDanceAnnounced?.Invoke(new DanceInfo { DanceIndex = danceIndex, Color = (MaskColor)colorIndex });
+    }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RpcStartMaskDance(int colorIndex, int danceIndex, float duration)
+    {
+        if (colorIndex < 0 || colorIndex >= maskDanceIndexEvents.Length)
+        {
+            return;
+        }
+
+        maskDanceIndexEvents[colorIndex]?.RaiseEvent(danceIndex);
+        maskDanceActive[colorIndex] = true;
+        Debug.Log($"[DanceEvent] MaskDance start color={(MaskColor)colorIndex} dance={danceIndex} duration={duration:0.0}s", this);
+    }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RpcStopMaskDance(int colorIndex)
+    {
+        if (colorIndex < 0 || colorIndex >= maskDanceIndexEvents.Length)
+        {
+            return;
+        }
+
+        maskDanceIndexEvents[colorIndex]?.RaiseEvent(-1);
+        maskDanceActive[colorIndex] = false;
+        Debug.Log($"[DanceEvent] MaskDance end color={(MaskColor)colorIndex}", this);
+        OnMaskDanceEnded?.Invoke();
+    }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RpcStartGroupDance(float duration)
+    {
+        isGroupDanceActive = true;
+        StopAllMaskDances();
+        groupDanceActiveEvent?.RaiseEvent(true);
+        startDiscoEvent?.RaiseEvent();
+        Debug.Log($"[DanceEvent] GroupDance start duration={duration:0.0}s", this);
+    }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RpcStopGroupDance()
+    {
+        groupDanceActiveEvent?.RaiseEvent(false);
+        stopDiscoEvent?.RaiseEvent();
+        Debug.Log("[DanceEvent] GroupDance end", this);
+        isGroupDanceActive = false;
     }
 
     private void StopAllMaskDances()

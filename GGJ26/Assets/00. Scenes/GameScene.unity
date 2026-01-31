@@ -1999,62 +1999,6 @@ ReflectionProbe:
   m_UseOcclusionCulling: 1
   m_Importance: 1
   m_CustomBakedTexture: {fileID: 0}
---- !u!1 &1819755679
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1819755681}
-  - component: {fileID: 1819755680}
-  m_Layer: 0
-  m_Name: DanceEventPublisher
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1819755680
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1819755679}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 862b74c0876d18048b8f91b3bc63ae02, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  maskDanceMinInterval: 8
-  maskDanceMaxInterval: 12
-  maskDanceDuration: 3
-  groupDanceInterval: 30
-  groupDanceDuration: 10
-  maskDanceIndexEvents:
-  - {fileID: 11400000, guid: 455fcfc713ebbea40a2355c6b9a7581e, type: 2}
-  - {fileID: 11400000, guid: bff2d00913296dc43a8c646622157e62, type: 2}
-  - {fileID: 11400000, guid: 2ec57bf759eb8ac47b808a13ea7380fa, type: 2}
-  groupDanceActiveEvent: {fileID: 11400000, guid: 2f392a79a9c07cb4d84bbadf00f5947a, type: 2}
-  startDiscoEvent: {fileID: 11400000, guid: 77aee14471927bf478b9875f59796765, type: 2}
-  stopDiscoEvent: {fileID: 11400000, guid: 2616eaedb6373ca47844971b5dada477, type: 2}
---- !u!4 &1819755681
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1819755679}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 147.83936, y: 19.284216, z: 93.978}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1979352518
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2518,6 +2462,67 @@ MonoBehaviour:
   m_LightCookieSize: {x: 1, y: 1}
   m_LightCookieOffset: {x: 0, y: 0}
   m_SoftShadowQuality: 0
+--- !u!1001 &2961309175232456799
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 2142822852063613695, guid: 5b7c902b5a9a4b04d9e709d1ea6ce83d, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 147.83936
+      objectReference: {fileID: 0}
+    - target: {fileID: 2142822852063613695, guid: 5b7c902b5a9a4b04d9e709d1ea6ce83d, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 19.284216
+      objectReference: {fileID: 0}
+    - target: {fileID: 2142822852063613695, guid: 5b7c902b5a9a4b04d9e709d1ea6ce83d, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 93.978
+      objectReference: {fileID: 0}
+    - target: {fileID: 2142822852063613695, guid: 5b7c902b5a9a4b04d9e709d1ea6ce83d, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2142822852063613695, guid: 5b7c902b5a9a4b04d9e709d1ea6ce83d, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2142822852063613695, guid: 5b7c902b5a9a4b04d9e709d1ea6ce83d, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2142822852063613695, guid: 5b7c902b5a9a4b04d9e709d1ea6ce83d, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2142822852063613695, guid: 5b7c902b5a9a4b04d9e709d1ea6ce83d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2142822852063613695, guid: 5b7c902b5a9a4b04d9e709d1ea6ce83d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2142822852063613695, guid: 5b7c902b5a9a4b04d9e709d1ea6ce83d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2906851058438377351, guid: 5b7c902b5a9a4b04d9e709d1ea6ce83d, type: 3}
+      propertyPath: m_Name
+      value: DanceEventPublisher
+      objectReference: {fileID: 0}
+    - target: {fileID: 5535076457467391008, guid: 5b7c902b5a9a4b04d9e709d1ea6ce83d, type: 3}
+      propertyPath: SortKey
+      value: 771364557
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 5b7c902b5a9a4b04d9e709d1ea6ce83d, type: 3}
 --- !u!1001 &3179646395537372628
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2902,7 +2907,7 @@ SceneRoots:
   - {fileID: 746329221}
   - {fileID: 1121192888}
   - {fileID: 858449456}
-  - {fileID: 1819755681}
+  - {fileID: 2961309175232456799}
   - {fileID: 1934341132831351136}
   - {fileID: 3179646395537372628}
   - {fileID: 5241774603038385849}
