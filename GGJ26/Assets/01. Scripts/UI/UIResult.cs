@@ -55,6 +55,10 @@ public class UIResult : MonoBehaviour
         Debug.Log("Showing Result UI");
         foreach (var c in notResultCanvas) c.enabled = false;
         ResultCanvas.enabled = true;
+
+        // Make mouse cursor visible and unlock its state
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
     }
 
     private void OnGameResult(GameResultData data)
