@@ -109,21 +109,7 @@ public class GameAudioController : MonoBehaviour
             return;
         }
 
-        if (groupBgmEmitter != null)
-        {
-            FadeOutAndPause(groupBgmEmitter);
-        }
-
-        if (normalBgmEmitter == null)
-        {
-            normalBgmEmitter = audioManager.PlayLoopingMusic(normalBgmCue, musicConfiguration, transform.position);
-        }
-        else
-        {
-            audioManager.ResumeEmitter(normalBgmEmitter);
-        }
-
-        FadeIn(normalBgmEmitter);
+        SwitchBgm(groupBgmEmitter, normalBgmCue, false);
     }
 
     private void PlayGroupDanceBgm()
@@ -133,21 +119,7 @@ public class GameAudioController : MonoBehaviour
             return;
         }
 
-        if (normalBgmEmitter != null)
-        {
-            FadeOutAndPause(normalBgmEmitter);
-        }
-
-        if (groupBgmEmitter == null)
-        {
-            groupBgmEmitter = audioManager.PlayLoopingMusic(groupDanceBgmCue, musicConfiguration, transform.position);
-        }
-        else
-        {
-            audioManager.ResumeEmitter(groupBgmEmitter);
-        }
-
-        FadeIn(groupBgmEmitter);
+        SwitchBgm(normalBgmEmitter, groupDanceBgmCue, true);
     }
 
     private void PlaySfx(AudioCueSO cue, Vector3 position)
@@ -178,6 +150,50 @@ public class GameAudioController : MonoBehaviour
         }
 
         StartFade(emitter, 1f, false);
+    }
+
+    private void SwitchBgm(SoundEmitter fadeOutEmitter, AudioCueSO cue, bool isGroupTarget)
+    {
+        if (audioManager == null || cue == null)
+        {
+            return;
+        }
+
+        if (fadeRoutine != null)
+        {
+            StopCoroutine(fadeRoutine);
+        }
+
+        fadeRoutine = StartCoroutine(SwitchBgmRoutine(fadeOutEmitter, cue, isGroupTarget));
+    }
+
+    private System.Collections.IEnumerator SwitchBgmRoutine(SoundEmitter fadeOutEmitter, AudioCueSO cue, bool isGroupTarget)
+    {
+        if (fadeOutEmitter != null)
+        {
+            yield return FadeRoutine(fadeOutEmitter, 0f, true);
+        }
+
+        SoundEmitter fadeInEmitter = isGroupTarget ? groupBgmEmitter : normalBgmEmitter;
+        if (fadeInEmitter == null)
+        {
+            fadeInEmitter = audioManager.PlayLoopingMusic(cue, musicConfiguration, transform.position);
+            if (isGroupTarget)
+            {
+                groupBgmEmitter = fadeInEmitter;
+            }
+            else
+            {
+                normalBgmEmitter = fadeInEmitter;
+            }
+        }
+        else
+        {
+            audioManager.ResumeEmitter(fadeInEmitter);
+        }
+
+        audioManager.SetEmitterVolume(fadeInEmitter, 0f);
+        yield return FadeRoutine(fadeInEmitter, 1f, false);
     }
 
     private void StartFade(SoundEmitter emitter, float targetVolume, bool pauseAfter)

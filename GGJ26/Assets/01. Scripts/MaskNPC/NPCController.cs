@@ -24,6 +24,12 @@ public class NPCController : MonoBehaviour
     public AudioClip LandingAudioClip;
     public AudioClip[] FootstepAudioClips;
     [Range(0, 1)] public float FootstepAudioVolume = 0.5f;
+    
+    [Header("SFX Channel (optional)")]
+    [SerializeField] private AudioCueEventChannelSO sfxEventChannel;
+    [SerializeField] private AudioConfigurationSO sfxConfiguration;
+    [SerializeField] private AudioCueSO landingSfxCue;
+    [SerializeField] private AudioCueSO[] footstepSfxCues;
 
     [Space(10)]
     [Tooltip("The height the NPC can jump")]
@@ -275,6 +281,11 @@ public class NPCController : MonoBehaviour
     {
         if (animationEvent.animatorClipInfo.weight > 0.5f)
         {
+            if (TryPlayFootstepSfx())
+            {
+                return;
+            }
+            
             if (FootstepAudioClips.Length > 0)
             {
                 var index = Random.Range(0, FootstepAudioClips.Length);
@@ -287,8 +298,42 @@ public class NPCController : MonoBehaviour
     {
         if (animationEvent.animatorClipInfo.weight > 0.5f)
         {
+            if (TryPlayLandingSfx())
+            {
+                return;
+            }
+            
             AudioSource.PlayClipAtPoint(LandingAudioClip, transform.TransformPoint(_controller.center), FootstepAudioVolume);
         }
+    }
+
+    private bool TryPlayFootstepSfx()
+    {
+        if (sfxEventChannel == null || sfxConfiguration == null || footstepSfxCues == null || footstepSfxCues.Length == 0)
+        {
+            return false;
+        }
+
+        var index = Random.Range(0, footstepSfxCues.Length);
+        var cue = footstepSfxCues[index];
+        if (cue == null)
+        {
+            return false;
+        }
+
+        sfxEventChannel.RaisePlayEvent(cue, sfxConfiguration, transform.TransformPoint(_controller.center));
+        return true;
+    }
+
+    private bool TryPlayLandingSfx()
+    {
+        if (sfxEventChannel == null || sfxConfiguration == null || landingSfxCue == null)
+        {
+            return false;
+        }
+
+        sfxEventChannel.RaisePlayEvent(landingSfxCue, sfxConfiguration, transform.TransformPoint(_controller.center));
+        return true;
     }
 }
 

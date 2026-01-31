@@ -152,7 +152,6 @@ GameObject:
   - component: {fileID: 4235962298446683591}
   - component: {fileID: 3179968366648037960}
   - component: {fileID: 7564230312845050137}
-  - component: {fileID: 6700653103809909498}
   m_Layer: 6
   m_Name: PlayerArmature_Normal
   m_TagString: Player
@@ -220,6 +219,10 @@ MonoBehaviour:
   crosshairColor: {r: 1, g: 1, b: 1, a: 1}
   hitEffectPrefab: {fileID: 0}
   hitEffectLifetime: 1.5
+  sfxEventChannel: {fileID: 11400000, guid: 06d6e7e2f1efcf34091297cc2951787b, type: 2}
+  sfxConfiguration: {fileID: 11400000, guid: 854501da1c4d88b498813056f7cc098d, type: 2}
+  shootSfxCue: {fileID: 11400000, guid: 07ce1e08503ce9e4ab531c18151365e7, type: 2}
+  hitSfxCue: {fileID: 11400000, guid: 83639e1cdc0b7644dbaaf8619be44c49, type: 2}
 --- !u!114 &2233445735992974238
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -310,6 +313,20 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 274649b0e221539409070ebf6c18918b, type: 3}
   - {fileID: 8300000, guid: a3194b8bbc96ef84fab1f98f4b7dae3e, type: 3}
   FootstepAudioVolume: 0.3
+  sfxEventChannel: {fileID: 11400000, guid: 842476557eddfca48a0ab8a928a08334, type: 2}
+  sfxConfiguration: {fileID: 11400000, guid: 854501da1c4d88b498813056f7cc098d, type: 2}
+  landingSfxCue: {fileID: 11400000, guid: 8cbd34c46b949924ea5c0d20a789c4a4, type: 2}
+  footstepSfxCues:
+  - {fileID: 11400000, guid: 0c903a1b83f5dd34c8c8dbdc17bf9f73, type: 2}
+  - {fileID: 11400000, guid: f96ea917ddca1dd498ee3a5f9c8638ac, type: 2}
+  - {fileID: 11400000, guid: 3031908c3b1fe8d4f9bbd41f45a13d98, type: 2}
+  - {fileID: 11400000, guid: 0337e823f9fb56646893512fde2db7de, type: 2}
+  - {fileID: 11400000, guid: dc9bce012ca55ab45bd3c2ea99560793, type: 2}
+  - {fileID: 11400000, guid: aa642c1596045d345b670f0d0e60e70f, type: 2}
+  - {fileID: 11400000, guid: f2fa46c491f9c674082b8fdf7131f06b, type: 2}
+  - {fileID: 11400000, guid: 28cea3be0fda66e4ab73f6320d9b7552, type: 2}
+  - {fileID: 11400000, guid: 429406a30f4439b42ab6d3283faa7428, type: 2}
+  - {fileID: 11400000, guid: 7faccd6eddc3f944caad79b0b1fc3922, type: 2}
   JumpHeight: 1.2
   Gravity: -15
   JumpTimeout: 0.3
@@ -358,6 +375,10 @@ MonoBehaviour:
   look: {x: 0, y: 0}
   jump: 0
   sprint: 0
+  dance1: 0
+  dance2: 0
+  dance3: 0
+  dance4: 0
   analogMovement: 0
   cursorLocked: 1
   cursorInputForLook: 1
@@ -563,6 +584,11 @@ MonoBehaviour:
   bottomClamp: -30
   cameraAngleOverride: 0
   lockCameraPosition: 0
+  useSeekerCameraProfile: 1
+  seekerCameraDistance: 3
+  seekerCameraSide: 0
+  seekerShoulderOffset: {x: 0, y: 0, z: 0}
+  seekerVerticalArmLength: 0
 --- !u!114 &3179968366648037960
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -602,20 +628,6 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
---- !u!114 &6700653103809909498
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 456408205788446354}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1541381998, guid: e725a070cec140c4caffb81624c8c787, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Guid:
-    RawGuidValue: 5653f12b043b4db6b434be0d655094e8
 --- !u!1 &752989075150667910
 GameObject:
   m_ObjectHideFlags: 0

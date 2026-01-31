@@ -1992,6 +1992,20 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 274649b0e221539409070ebf6c18918b, type: 3}
   - {fileID: 8300000, guid: a3194b8bbc96ef84fab1f98f4b7dae3e, type: 3}
   FootstepAudioVolume: 0.5
+  sfxEventChannel: {fileID: 11400000, guid: 06d6e7e2f1efcf34091297cc2951787b, type: 2}
+  sfxConfiguration: {fileID: 11400000, guid: 854501da1c4d88b498813056f7cc098d, type: 2}
+  landingSfxCue: {fileID: 11400000, guid: 8cbd34c46b949924ea5c0d20a789c4a4, type: 2}
+  footstepSfxCues:
+  - {fileID: 11400000, guid: 0c903a1b83f5dd34c8c8dbdc17bf9f73, type: 2}
+  - {fileID: 11400000, guid: f96ea917ddca1dd498ee3a5f9c8638ac, type: 2}
+  - {fileID: 11400000, guid: 3031908c3b1fe8d4f9bbd41f45a13d98, type: 2}
+  - {fileID: 11400000, guid: 0337e823f9fb56646893512fde2db7de, type: 2}
+  - {fileID: 11400000, guid: dc9bce012ca55ab45bd3c2ea99560793, type: 2}
+  - {fileID: 11400000, guid: aa642c1596045d345b670f0d0e60e70f, type: 2}
+  - {fileID: 11400000, guid: f2fa46c491f9c674082b8fdf7131f06b, type: 2}
+  - {fileID: 11400000, guid: 28cea3be0fda66e4ab73f6320d9b7552, type: 2}
+  - {fileID: 11400000, guid: 429406a30f4439b42ab6d3283faa7428, type: 2}
+  - {fileID: 11400000, guid: 7faccd6eddc3f944caad79b0b1fc3922, type: 2}
   JumpHeight: 1.2
   Gravity: -15
   JumpTimeout: 0.5

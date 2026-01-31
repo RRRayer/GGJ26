@@ -12,8 +12,8 @@ namespace StarterAssets
 #if ENABLE_INPUT_SYSTEM 
     [RequireComponent(typeof(PlayerInput))]
 #endif
-    public class ThirdPersonController : MonoBehaviour
-    {
+	public class ThirdPersonController : MonoBehaviour
+	{
         [Header("Player")]
         [Tooltip("Move speed of the character in m/s")]
         public float MoveSpeed = 2.0f;
@@ -28,9 +28,15 @@ namespace StarterAssets
         [Tooltip("Acceleration and deceleration")]
         public float SpeedChangeRate = 10.0f;
 
-        public AudioClip LandingAudioClip;
-        public AudioClip[] FootstepAudioClips;
-        [Range(0, 1)] public float FootstepAudioVolume = 0.5f;
+		public AudioClip LandingAudioClip;
+		public AudioClip[] FootstepAudioClips;
+		[Range(0, 1)] public float FootstepAudioVolume = 0.5f;
+
+		[Header("SFX Channel (optional)")]
+		[SerializeField] private AudioCueEventChannelSO sfxEventChannel;
+		[SerializeField] private AudioConfigurationSO sfxConfiguration;
+		[SerializeField] private AudioCueSO landingSfxCue;
+		[SerializeField] private AudioCueSO[] footstepSfxCues;
 
         [Space(10)]
         [Tooltip("The height the player can jump")]
@@ -373,24 +379,63 @@ namespace StarterAssets
                 GroundedRadius);
         }
 
-        private void OnFootstep(AnimationEvent animationEvent)
-        {
-            if (animationEvent.animatorClipInfo.weight > 0.5f)
-            {
-                if (FootstepAudioClips.Length > 0)
-                {
-                    var index = Random.Range(0, FootstepAudioClips.Length);
-                    AudioSource.PlayClipAtPoint(FootstepAudioClips[index], transform.TransformPoint(_controller.center), FootstepAudioVolume);
-                }
-            }
-        }
+		private void OnFootstep(AnimationEvent animationEvent)
+		{
+			if (animationEvent.animatorClipInfo.weight > 0.5f)
+			{
+				if (TryPlayFootstepSfx())
+				{
+					return;
+				}
 
-        private void OnLand(AnimationEvent animationEvent)
-        {
-            if (animationEvent.animatorClipInfo.weight > 0.5f)
-            {
-                AudioSource.PlayClipAtPoint(LandingAudioClip, transform.TransformPoint(_controller.center), FootstepAudioVolume);
-            }
-        }
-    }
+				if (FootstepAudioClips.Length > 0)
+				{
+					var index = Random.Range(0, FootstepAudioClips.Length);
+					AudioSource.PlayClipAtPoint(FootstepAudioClips[index], transform.TransformPoint(_controller.center), FootstepAudioVolume);
+				}
+			}
+		}
+
+		private void OnLand(AnimationEvent animationEvent)
+		{
+			if (animationEvent.animatorClipInfo.weight > 0.5f)
+			{
+				if (TryPlayLandingSfx())
+				{
+					return;
+				}
+
+				AudioSource.PlayClipAtPoint(LandingAudioClip, transform.TransformPoint(_controller.center), FootstepAudioVolume);
+			}
+		}
+
+		private bool TryPlayFootstepSfx()
+		{
+			if (sfxEventChannel == null || sfxConfiguration == null || footstepSfxCues == null || footstepSfxCues.Length == 0)
+			{
+				return false;
+			}
+
+			var index = Random.Range(0, footstepSfxCues.Length);
+			var cue = footstepSfxCues[index];
+			if (cue == null)
+			{
+				return false;
+			}
+
+			sfxEventChannel.RaisePlayEvent(cue, sfxConfiguration, transform.TransformPoint(_controller.center));
+			return true;
+		}
+
+		private bool TryPlayLandingSfx()
+		{
+			if (sfxEventChannel == null || sfxConfiguration == null || landingSfxCue == null)
+			{
+				return false;
+			}
+
+			sfxEventChannel.RaisePlayEvent(landingSfxCue, sfxConfiguration, transform.TransformPoint(_controller.center));
+			return true;
+		}
+	}
 }
