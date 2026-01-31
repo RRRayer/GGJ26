@@ -136,11 +136,11 @@ MonoBehaviour:
   maskObject: {fileID: 7014308162386331635}
   flashVFX: {fileID: 8576590856730421756}
   flashLight: {fileID: 5812427819337222636}
-  rotationCount: 2
-  yOffset: -2
-  animationDuration: 0.8
-  lightFlashDuration: 0.3
-  flashEndRangeMultiplier: 2
+  rotationCount: 4
+  yOffset: -4
+  animationDuration: 2
+  lightFlashDuration: 0.8
+  flashEndRangeMultiplier: 3
   selfDestructDelay: 2
 --- !u!1 &7597180861991075280
 GameObject:
