@@ -84,6 +84,7 @@ public class GameManager : NetworkBehaviour
         {
             playerStateManager.OnPlayerStateChanged += OnPlayerStateChanged;
         }
+        PlayerElimination.OnAnyEliminated += HandlePlayerEliminated;
     }
 
     private void OnDisable()
@@ -97,6 +98,7 @@ public class GameManager : NetworkBehaviour
         {
             playerStateManager.OnPlayerStateChanged -= OnPlayerStateChanged;
         }
+        PlayerElimination.OnAnyEliminated -= HandlePlayerEliminated;
     }
     
     private void OnPlayerStateChanged(PlayerState updatedState)
@@ -159,6 +161,7 @@ public class GameManager : NetworkBehaviour
             Debug.LogWarning("[GameManager] uiCanvasManager was not assigned. Found by type.");
         }
 
+        LockCursorForGameplay();
         remainingSeconds = totalGameSeconds;
         if (hasSpawned && Object != null && Object.HasStateAuthority)
         {
@@ -176,6 +179,18 @@ public class GameManager : NetworkBehaviour
             StopCoroutine(_autoSaveRoutine);
         }
         _autoSaveRoutine = StartCoroutine(AutoSaveRoutine());
+    }
+
+    private void LockCursorForGameplay()
+    {
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+
+        var inputs = FindFirstObjectByType<StarterAssets.StarterAssetsInputs>();
+        if (inputs != null)
+        {
+            inputs.ForceCursorLocked();
+        }
     }
 
     private void CleanupGame()
@@ -246,7 +261,11 @@ public class GameManager : NetworkBehaviour
 
         if (playerStateManager == null)
         {
-            return;
+            playerStateManager = FindFirstObjectByType<PlayerStateManager>();
+            if (playerStateManager == null)
+            {
+                return;
+            }
         }
 
         // Condition for single-player game end (player dies)
@@ -362,6 +381,23 @@ public class GameManager : NetworkBehaviour
 
     private void EndGame(bool seekerWin)
     {
+        if (Object != null && Object.HasStateAuthority)
+        {
+            RpcEndGame(seekerWin, remainingSeconds);
+            return;
+        }
+
+        EndGameLocal(seekerWin, remainingSeconds);
+    }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RpcEndGame(bool seekerWin, float remaining)
+    {
+        EndGameLocal(seekerWin, remaining);
+    }
+
+    private void EndGameLocal(bool seekerWin, float remaining)
+    {
         if (hasEnded)
         {
             return;
@@ -383,14 +419,76 @@ public class GameManager : NetworkBehaviour
         {
             localWin = localState.IsSeeker == seekerWin;
         }
+        else
+        {
+            var localRole = FindLocalPlayerRole();
+            if (localRole != null)
+            {
+                localWin = localRole.IsSeeker == seekerWin;
+            }
+        }
 
         float avgReaction = statsManager != null ? statsManager.GetAverageReactionMs() : 0f;
         List<MaskColor> history = statsManager != null ? statsManager.GetMaskHistory() : new List<MaskColor>();
-        var result = new GameResultData(seekerWin, localWin, remainingSeconds, avgReaction, history);
+        var result = new GameResultData(seekerWin, localWin, remaining, avgReaction, history);
 
         onGameResult?.RaiseEvent(result);
         Debug.Log("Game Ended. Seeker Win: " + seekerWin + ", Local Player Win: " + localWin);
         onGameEnded?.RaiseEvent();
+    }
+
+    private PlayerRole FindLocalPlayerRole()
+    {
+        var roles = FindObjectsByType<PlayerRole>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        foreach (var role in roles)
+        {
+            if (role == null)
+            {
+                continue;
+            }
+
+            if (role.Object != null && role.Object.HasInputAuthority)
+            {
+                return role;
+            }
+        }
+
+        return null;
+    }
+
+    private void HandlePlayerEliminated(PlayerElimination eliminated)
+    {
+        if (Object == null || Object.HasStateAuthority == false)
+        {
+            return;
+        }
+
+        if (hasEnded || currentGameState != GameState.Gameplay)
+        {
+            return;
+        }
+
+        int aliveNonSeekers = 0;
+        var roles = FindObjectsByType<PlayerRole>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        foreach (var role in roles)
+        {
+            if (role == null || role.IsSeeker)
+            {
+                continue;
+            }
+
+            var elim = role.GetComponent<PlayerElimination>();
+            if (elim != null && elim.IsEliminated == false)
+            {
+                aliveNonSeekers++;
+            }
+        }
+
+        if (aliveNonSeekers == 0)
+        {
+            Debug.Log("[GameManager] Event: All Non-Seekers Dead. Seekers Win.");
+            EndGame(seekerWin: true);
+        }
     }
 
     private void UnlockCursorForResult()

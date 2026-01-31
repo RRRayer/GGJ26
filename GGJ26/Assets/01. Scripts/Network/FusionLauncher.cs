@@ -33,6 +33,8 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
     [Range(0f, 0.45f)]
     [SerializeField] private float gridJitter = 0.35f;
     [SerializeField] private bool preferSpawnPoints = true;
+    [SerializeField] private int requiredSpawnPoints = 31;
+    [SerializeField] private float spawnPointWaitSeconds = 2f;
 
     [Header("NPC Spawning")]
     [SerializeField] private NetworkObject redNpcPrefab;
@@ -48,6 +50,7 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
     private bool hasSpawnBounds;
     private Vector3 spawnBoundsCenter;
     private Vector3 spawnBoundsSize;
+    private bool pendingLocalSpawn;
 
     public event Action<bool> MatchmakingStateChanged;
     public bool IsMatchmaking => isMatchmaking;
@@ -117,6 +120,7 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
         {
             runner.MakeDontDestroyOnLoad(gameObject);
         }
+        DontDestroyOnLoad(gameObject);
 
         var sceneManager = GetComponent<NetworkSceneManagerDefault>();
         var sceneIndex = SceneManager.GetActiveScene().buildIndex;
@@ -203,6 +207,7 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
         spawnPoints.AddRange(found);
     }
 
+
     private Vector3 GetSpawnPosition(PlayerRef player)
     {
         if (spawnLayoutBuilt == false)
@@ -221,6 +226,15 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
 
     private void TrySpawnLocalPlayer(PlayerRef player)
     {
+        if (spawnLayoutBuilt == false)
+        {
+            if (preferSpawnPoints && spawnPoints.Count < requiredSpawnPoints)
+            {
+                pendingLocalSpawn = true;
+                return;
+            }
+        }
+
         var prefab = GetPrefabForPlayer(player);
         if (prefab == null)
         {
@@ -260,7 +274,7 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
         {
             var seeker = GetDeterministicSeeker();
             bool isSeeker = player == seeker;
-            playerStateManager.RegisterPlayer(player.RawEncoded.ToString(), isSeeker);
+            playerStateManager.RegisterPlayerNetworked(player.RawEncoded.ToString(), isSeeker);
             Debug.Log($"[FusionLauncher] TrySpawnLocalPlayer: Player {player.RawEncoded} determined as seeker: {isSeeker}.");
         }
     }
@@ -319,6 +333,12 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
             return;
         }
 
+        if (spawnLayoutBuilt == false && preferSpawnPoints && spawnPoints.Count < requiredSpawnPoints)
+        {
+            pendingLocalSpawn = player == runner.LocalPlayer;
+            return;
+        }
+
         TrySpawnLocalPlayer(player);
     }
 
@@ -336,14 +356,16 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
 
     public void OnSceneLoadDone(NetworkRunner runner)
     {
+        if (this == null || gameObject == null || isActiveAndEnabled == false)
+        {
+            return;
+        }
+
         if (IsGameScene())
         {
             ResetSpawnLayoutForScene();
             SetMatchmakingState(false);
-            RefreshSpawnPoints();
-            ResolveSpawnArea();
-            BuildSpawnLayout();
-            TrySpawnLocalPlayer(runner.LocalPlayer);
+            StartCoroutine(WaitForSpawnPointsAndBuild());
         }
     }
 
@@ -597,7 +619,7 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
         }
 
         string playerId = player.RawEncoded.ToString();
-        playerStateManager.RegisterPlayer(playerId, false);
+        playerStateManager.RegisterPlayerNetworked(playerId, false);
 
         if (runner != null && player == runner.LocalPlayer)
         {
@@ -613,6 +635,11 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
         }
 
         ResolveSpawnArea();
+        if (preferSpawnPoints && spawnPoints.Count < requiredSpawnPoints)
+        {
+            Debug.LogWarning($"[FusionLauncher] SpawnPoints not ready ({spawnPoints.Count}/{requiredSpawnPoints}). Delaying spawn layout.", this);
+            return;
+        }
         if (spawnArea == null && hasSpawnBounds == false && (preferSpawnPoints == false || spawnPoints.Count == 0))
         {
             Debug.LogWarning("[FusionLauncher] SpawnArea not found. Using fallback radius.", this);
@@ -896,6 +923,54 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
         spawnBoundsCenter = bounds.center;
         spawnBoundsSize = bounds.size;
         hasSpawnBounds = true;
+    }
+
+    private System.Collections.IEnumerator WaitForSpawnPointsAndBuild()
+    {
+        float startTime = Time.time;
+        int lastCount = -1;
+
+        while (Time.time - startTime < spawnPointWaitSeconds)
+        {
+            RefreshSpawnPoints();
+            int count = spawnPoints.Count;
+            if (count != lastCount)
+            {
+                Debug.Log($"[FusionLauncher] Waiting spawn points: {count}/{requiredSpawnPoints}", this);
+                lastCount = count;
+            }
+
+            if (preferSpawnPoints == false || count >= requiredSpawnPoints)
+            {
+                break;
+            }
+
+            yield return null;
+        }
+
+        RefreshSpawnPoints();
+        Debug.Log($"[FusionLauncher] Spawn points ready: {spawnPoints.Count}/{requiredSpawnPoints}", this);
+        if (preferSpawnPoints && spawnPoints.Count < requiredSpawnPoints)
+        {
+            Debug.LogWarning("[FusionLauncher] Spawn points not ready. Skipping spawn this pass.", this);
+            yield break;
+        }
+
+        // Let transforms settle for a couple of frames before sampling positions.
+        yield return null;
+        yield return null;
+
+        RefreshSpawnPoints();
+        ResolveSpawnArea();
+        BuildSpawnLayout();
+        if (runner != null && runner.IsRunning)
+        {
+            if (pendingLocalSpawn && spawnLayoutBuilt)
+            {
+                pendingLocalSpawn = false;
+            }
+            TrySpawnLocalPlayer(runner.LocalPlayer);
+        }
     }
 
 

@@ -3616,6 +3616,9 @@ MonoBehaviour:
   spawnSeed: 1337
   useGridSampling: 1
   gridJitter: 0.35
+  preferSpawnPoints: 1
+  requiredSpawnPoints: 31
+  spawnPointWaitSeconds: 5
   redNpcPrefab: {fileID: 2100474120000197621, guid: 1ff92bc27d42b7740945bbc1d789e223, type: 3}
   blueNpcPrefab: {fileID: 7212592482297200950, guid: 2860bd911f38a414da4def5e231f5f6b, type: 3}
   greenNpcPrefab: {fileID: 3053083809587001794, guid: 4d72ed3f3826b5b4783bbf4a992054e2, type: 3}

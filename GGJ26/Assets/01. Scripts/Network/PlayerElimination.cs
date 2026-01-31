@@ -21,6 +21,7 @@ public class PlayerElimination : NetworkBehaviour
     private int animIDDead;
     private bool snappedToGroundOnDeath;
     private GameObject spectatorInstance;
+    public static System.Action<PlayerElimination> OnAnyEliminated;
 
     private void Awake()
     {
@@ -61,6 +62,10 @@ public class PlayerElimination : NetworkBehaviour
 
     public override void Spawned()
     {
+        if (playerStateManager == null)
+        {
+            playerStateManager = FindFirstObjectByType<PlayerStateManager>();
+        }
         lastEliminated = IsEliminated;
         ApplyEliminatedState();
     }
@@ -69,20 +74,35 @@ public class PlayerElimination : NetworkBehaviour
     {
         if (lastEliminated != IsEliminated)
         {
+            bool transitionedToEliminated = lastEliminated == false && IsEliminated;
             lastEliminated = IsEliminated;
             ApplyEliminatedState();
+            if (transitionedToEliminated)
+            {
+                OnAnyEliminated?.Invoke(this);
+            }
         }
     }
 
     [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
     public void RpcRequestEliminate()
     {
+        Debug.Log($"[PlayerElimination] RpcRequestEliminate on {name} stateAuth={Object != null && Object.HasStateAuthority}");
         if (IsEliminated)
         {
             return;
         }
 
         IsEliminated = true;
+        if (playerStateManager != null)
+        {
+            string playerId = Object.InputAuthority.RawEncoded.ToString();
+            playerStateManager.MarkDeadNetworked(playerId);
+        }
+        else
+        {
+            Debug.LogWarning("[PlayerElimination] playerStateManager is null during RpcRequestEliminate.");
+        }
     }
 
     public void ApplyEliminatedStateImmediate()
@@ -90,8 +110,14 @@ public class PlayerElimination : NetworkBehaviour
         ApplyEliminatedState();
     }
 
-    [Rpc(RpcSources.InputAuthority, RpcTargets.All)]
-    public void RpcPlayDeadAnimation()
+    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
+    public void RpcRequestPlayDeadAnimation()
+    {
+        RpcPlayDeadAnimationAll();
+    }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RpcPlayDeadAnimationAll()
     {
         if (animator == null)
         {
@@ -176,13 +202,15 @@ public class PlayerElimination : NetworkBehaviour
             snappedToGroundOnDeath = false;
         }
 
-        if (eliminated && Object != null && Object.HasStateAuthority && playerStateManager != null)
+        if (eliminated && playerStateManager == null)
         {
-            if (Object.InputAuthority != PlayerRef.None)
-            {
-                string playerId = Object.InputAuthority.RawEncoded.ToString();
-                playerStateManager.MarkDead(playerId);
-            }
+            playerStateManager = FindFirstObjectByType<PlayerStateManager>();
+        }
+
+        if (eliminated && playerStateManager != null)
+        {
+            string playerId = Object.InputAuthority.RawEncoded.ToString();
+            playerStateManager.MarkDeadNetworked(playerId);
         }
     }
 

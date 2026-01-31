@@ -67,6 +67,11 @@ public class PlayerRole : NetworkBehaviour
             return;
         }
 
+        if (playerStateManager == null)
+        {
+            playerStateManager = FindFirstObjectByType<PlayerStateManager>();
+        }
+
         PlayerRef seeker = GetDeterministicSeeker();
         IsSeeker = Object.InputAuthority == seeker;
         RoleAssigned = true;
@@ -74,7 +79,7 @@ public class PlayerRole : NetworkBehaviour
         if (playerStateManager != null)
         {
             string playerId = Object.InputAuthority.RawEncoded.ToString();
-            playerStateManager.RegisterPlayer(playerId, IsSeeker);
+            playerStateManager.RegisterPlayerNetworked(playerId, IsSeeker);
             if (Object.HasInputAuthority)
             {
                 playerStateManager.SetLocalPlayer(playerId);
