@@ -21,13 +21,6 @@ public class MaskEffect : MonoBehaviour
 
     public float selfDestructDelay = 2f; // 파괴 전 대기 시간
 
-    // Inspector에서 바로 테스트할 수 있는 버튼 추가
-    [ContextMenu("Trigger Effect")]
-    public void TriggerEffect()
-    {
-        PlayEffectSequence().Forget(); // Start the async sequence and ignore its result
-    }
-
     // 이 메서드가 연출의 모든 것을 책임지고, 끝날 때 Task를 완료합니다.
     public async Task PlayEffectSequence()
     {
@@ -41,6 +34,7 @@ public class MaskEffect : MonoBehaviour
         // 1. 가면 회전 및 하강 애니메이션
         Sequence animSequence = DOTween.Sequence();
         animSequence.Join(maskObject.transform.DORotate(new Vector3(0, 360 * rotationCount, 0), animationDuration, RotateMode.LocalAxisAdd));
+        maskObject.transform.position = new Vector3(maskObject.transform.position.x, maskObject.transform.position.y - yOffset, maskObject.transform.position.z); 
         animSequence.Join(maskObject.transform.DOLocalMoveY(yOffset, animationDuration).SetRelative(true));
 
         // DOTween 애니메이션이 끝날 때까지 기다립니다.

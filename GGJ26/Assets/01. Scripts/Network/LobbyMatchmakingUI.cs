@@ -13,6 +13,9 @@ public class LobbyMatchmakingUI : MonoBehaviour
     [SerializeField] private Key startKey = Key.Enter;
     [SerializeField] private string matchmakingMessage = "매칭 중...";
 
+    [SerializeField] private TMP_InputField roomName;
+    [SerializeField] private TMP_Dropdown maxPlayerCount;
+
     [Header("Popup (optional)")]
     [SerializeField] private GameObject popupRoot;
     [SerializeField] private TextMeshProUGUI popupText;
@@ -38,6 +41,18 @@ public class LobbyMatchmakingUI : MonoBehaviour
         if (popupRoot != null)
         {
             popupRoot.SetActive(false);
+        }
+
+        // Initialize maxPlayerCount dropdown
+        if (maxPlayerCount != null)
+        {
+            maxPlayerCount.ClearOptions();
+            for (int i = 1; i <= 4; i++)
+            {
+                maxPlayerCount.options.Add(new TMP_Dropdown.OptionData(i.ToString()));
+            }
+            maxPlayerCount.value = 3; // 4th option (index 3) is 4 players
+            maxPlayerCount.RefreshShownValue();
         }
     }
 
@@ -103,7 +118,14 @@ public class LobbyMatchmakingUI : MonoBehaviour
             popupRoot.SetActive(true);
         }
 
-        launcher.StartMatchmaking();
+        string room = roomName != null && !string.IsNullOrEmpty(roomName.text) ? roomName.text : "RoomName";
+        int maxPlayers = 4;
+        if (maxPlayerCount != null)
+        {
+            maxPlayers = int.Parse(maxPlayerCount.options[maxPlayerCount.value].text);
+        }
+        Debug.Log($"Starting Matchmaking: Room='{room}', MaxPlayers={maxPlayers}");
+        launcher.StartMatchmaking(roomName.text, maxPlayers);
     }
 
     private void CancelMatchmaking()

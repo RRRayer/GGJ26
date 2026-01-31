@@ -12,7 +12,7 @@ using UnityEngine.InputSystem;
 public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
 {
     [Header("Session")]
-    [SerializeField] private string sessionName = "GGJ26";
+    // [SerializeField] private string sessionName = "GGJ26";
     [SerializeField] private int maxPlayers = 4;
     [SerializeField] private string gameScenePath = "Assets/00. Scenes/Game.unity";
     [SerializeField] private bool autoStartOnAwake = false;
@@ -57,22 +57,23 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
     {
         if (autoStartOnAwake)
         {
-            StartMatchmaking();
+            StartMatchmaking("debug", 1);
         }
     }
 
-    public async void StartMatchmaking()
+    public async void StartMatchmaking(string roomName, int maxPlayers)
     {
         if (isStarting)
         {
             return;
         }
 
-        await StartMatchmakingAsync();
+        await StartMatchmakingAsync(roomName, maxPlayers);
     }
 
-    private async Task StartMatchmakingAsync()
+    private async Task StartMatchmakingAsync(string _roomName, int _maxPlayers)
     {
+        this.maxPlayers = _maxPlayers;
         isStarting = true;
         cancelRequested = false;
         SetMatchmakingState(true);
@@ -100,8 +101,8 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
         var startArgs = new StartGameArgs
         {
             GameMode = GameMode.Shared,
-            SessionName = sessionName,
-            PlayerCount = maxPlayers,
+            SessionName = _roomName,
+            PlayerCount = _maxPlayers,
             Scene = SceneRef.FromIndex(sceneIndex),
             SceneManager = sceneManager
         };
