@@ -16,6 +16,9 @@ public class StunGun : NetworkBehaviour
     [Header("Hit Effect")]
     [SerializeField] private GameObject hitEffectPrefab;
     [SerializeField] private float hitEffectLifetime = 1.5f;
+    [Header("Muzzle Effect")]
+    [SerializeField] private Transform shootTransform;
+    [SerializeField] private UnityEngine.VFX.VisualEffect shootVfx;
     [Header("AI Death Effect")]
     [SerializeField] private GameObject fogEffectPrefab;
     [Header("Audio")]
@@ -44,6 +47,18 @@ public class StunGun : NetworkBehaviour
         elimination = GetComponent<PlayerElimination>();
         animator = GetComponent<Animator>();
         animIDShoot = Animator.StringToHash("Shoot");
+        if (shootTransform == null)
+        {
+            var found = transform.Find("ShootTransform");
+            if (found != null)
+            {
+                shootTransform = found;
+            }
+        }
+        if (shootVfx == null && shootTransform != null)
+        {
+            shootVfx = shootTransform.GetComponent<UnityEngine.VFX.VisualEffect>();
+        }
     }
 
     private void Update()
@@ -86,16 +101,21 @@ public class StunGun : NetworkBehaviour
 
         lastFireTime = Time.time;
         RpcTriggerShoot();
+        RpcPlayMuzzleVfx();
         PlaySfx(shootSfxCue, transform.position);
         BeginLookToCamera();
         Ray ray = new Ray(mainCamera.transform.position, mainCamera.transform.forward);
-        if (Physics.Raycast(ray, out RaycastHit hit, range, hitMask, QueryTriggerInteraction.Ignore) == false)
+        bool hasHit = Physics.Raycast(ray, out RaycastHit hit, range, hitMask, QueryTriggerInteraction.Ignore);
+        Vector3 hitPoint = hasHit ? hit.point : ray.origin + ray.direction * range;
+        Vector3 hitNormal = hasHit ? hit.normal : -ray.direction;
+
+        SpawnHitEffect(hitPoint, hitNormal);
+        RpcPlayHitSfx(hitPoint);
+
+        if (hasHit == false)
         {
             return;
         }
-
-        SpawnHitEffect(hit.point, hit.normal);
-        RpcPlayHitSfx(hit.point);
 
         var target = hit.collider.GetComponentInParent<PlayerElimination>();
         if (target == null)
@@ -164,6 +184,20 @@ public class StunGun : NetworkBehaviour
         }
 
         animator.SetTrigger(animIDShoot);
+    }
+
+    [Rpc(RpcSources.InputAuthority, RpcTargets.All)]
+    private void RpcPlayMuzzleVfx()
+    {
+        if (shootVfx == null && shootTransform != null)
+        {
+            shootVfx = shootTransform.GetComponent<UnityEngine.VFX.VisualEffect>();
+        }
+
+        if (shootVfx != null)
+        {
+            shootVfx.Play();
+        }
     }
 
     [Rpc(RpcSources.InputAuthority, RpcTargets.All)]

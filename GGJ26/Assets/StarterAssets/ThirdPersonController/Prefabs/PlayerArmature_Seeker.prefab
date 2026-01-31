@@ -1091,6 +1091,11 @@ MonoBehaviour:
   cameraController: {fileID: 0}
   spectatorController: {fileID: 9100000000000000009}
   bodyRenderers: []
+  animator: {fileID: 0}
+  spectatorRigPrefab: {fileID: 0}
+  deathGroundLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
   _IsEliminated:
     _value: 0
 --- !u!114 &9100000000000000008
@@ -1109,18 +1114,21 @@ MonoBehaviour:
   cooldownSeconds: 5
   hitMask:
     serializedVersion: 2
-    m_Bits: 64
+    m_Bits: 4294967295
   showCrosshair: 1
   crosshairSize: 24
   crosshairThickness: 2
   crosshairColor: {r: 1, g: 1, b: 1, a: 1}
   hitEffectPrefab: {fileID: 2684650621357901133, guid: f5d2b0efcb9d61c47909c81db6aeb8f4, type: 3}
   hitEffectLifetime: 1.5
+  shootTransform: {fileID: 8645168656686294115}
+  shootVfx: {fileID: 4325885231026906158}
   fogEffectPrefab: {fileID: 5989128303339467817, guid: 8262abb744c274246a87fdf578f77f46, type: 3}
   sfxEventChannel: {fileID: 11400000, guid: 06d6e7e2f1efcf34091297cc2951787b, type: 2}
   sfxConfiguration: {fileID: 11400000, guid: 854501da1c4d88b498813056f7cc098d, type: 2}
   shootSfxCue: {fileID: 11400000, guid: 07ce1e08503ce9e4ab531c18151365e7, type: 2}
   hitSfxCue: {fileID: 11400000, guid: 83639e1cdc0b7644dbaaf8619be44c49, type: 2}
+  rotateDuration: 0.05
 --- !u!114 &9100000000000000009
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1135,6 +1143,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   moveSpeed: 6
   verticalSpeed: 4
+  lookSensitivity: 0.15
+  minPitch: -80
+  maxPitch: 80
+  cameraObjectName: PlayerFollowCamera
+  bindAllVirtualCameras: 0
 --- !u!95 &6982812146204527121
 Animator:
   serializedVersion: 7
@@ -3126,9 +3139,19 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a86f411d3882b394396f36ee02eae6f7, type: 3}
+--- !u!2083052967 &4325885231026906158 stripped
+VisualEffect:
+  m_CorrespondingSourceObject: {fileID: 8590099445204388680, guid: a86f411d3882b394396f36ee02eae6f7, type: 3}
+  m_PrefabInstance: {fileID: 5421920931574951782}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &5067322447077369939 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 967208178019157813, guid: a86f411d3882b394396f36ee02eae6f7, type: 3}
+  m_PrefabInstance: {fileID: 5421920931574951782}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &8645168656686294115 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4379547548007205637, guid: a86f411d3882b394396f36ee02eae6f7, type: 3}
   m_PrefabInstance: {fileID: 5421920931574951782}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &7593580857930403632
