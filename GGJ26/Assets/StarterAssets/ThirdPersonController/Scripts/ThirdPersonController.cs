@@ -381,6 +381,11 @@ namespace StarterAssets
 
 		private void OnFootstep(AnimationEvent animationEvent)
 		{
+			if (_controller == null || _controller.enabled == false)
+			{
+				return;
+			}
+
 			if (animationEvent.animatorClipInfo.weight > 0.5f)
 			{
 				if (TryPlayFootstepSfx())
@@ -388,16 +393,25 @@ namespace StarterAssets
 					return;
 				}
 
-				if (FootstepAudioClips.Length > 0)
+				if (FootstepAudioClips != null && FootstepAudioClips.Length > 0)
 				{
 					var index = Random.Range(0, FootstepAudioClips.Length);
-					AudioSource.PlayClipAtPoint(FootstepAudioClips[index], transform.TransformPoint(_controller.center), FootstepAudioVolume);
+					var clip = FootstepAudioClips[index];
+					if (clip != null)
+					{
+						AudioSource.PlayClipAtPoint(clip, transform.TransformPoint(_controller.center), FootstepAudioVolume);
+					}
 				}
 			}
 		}
 
 		private void OnLand(AnimationEvent animationEvent)
 		{
+			if (_controller == null || _controller.enabled == false)
+			{
+				return;
+			}
+
 			if (animationEvent.animatorClipInfo.weight > 0.5f)
 			{
 				if (TryPlayLandingSfx())
@@ -405,7 +419,10 @@ namespace StarterAssets
 					return;
 				}
 
-				AudioSource.PlayClipAtPoint(LandingAudioClip, transform.TransformPoint(_controller.center), FootstepAudioVolume);
+				if (LandingAudioClip != null)
+				{
+					AudioSource.PlayClipAtPoint(LandingAudioClip, transform.TransformPoint(_controller.center), FootstepAudioVolume);
+				}
 			}
 		}
 

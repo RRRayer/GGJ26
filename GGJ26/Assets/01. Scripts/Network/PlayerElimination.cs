@@ -8,12 +8,16 @@ public class PlayerElimination : NetworkBehaviour
     [SerializeField] private FusionThirdPersonCamera cameraController;
     [SerializeField] private SpectatorController spectatorController;
     [SerializeField] private Renderer[] bodyRenderers;
+    [SerializeField] private Animator animator;
+    [SerializeField] private LayerMask deathGroundLayers = -1;
 
     [Networked]
     public NetworkBool IsEliminated { get; private set; }
 
     private PlayerStateManager playerStateManager;
     private bool lastEliminated;
+    private int animIDDead;
+    private bool snappedToGroundOnDeath;
 
     private void Awake()
     {
@@ -37,12 +41,18 @@ public class PlayerElimination : NetworkBehaviour
             spectatorController = GetComponent<SpectatorController>();
         }
 
+        if (animator == null)
+        {
+            animator = GetComponent<Animator>();
+        }
+
         if (bodyRenderers == null || bodyRenderers.Length == 0)
         {
             bodyRenderers = GetComponentsInChildren<Renderer>(true);
         }
 
         playerStateManager = FindFirstObjectByType<PlayerStateManager>();
+        animIDDead = Animator.StringToHash("Dead");
     }
 
     public override void Spawned()
@@ -69,6 +79,23 @@ public class PlayerElimination : NetworkBehaviour
         }
 
         IsEliminated = true;
+    }
+
+    [Rpc(RpcSources.InputAuthority, RpcTargets.All)]
+    public void RpcPlayDeadAnimation()
+    {
+        if (animator == null)
+        {
+            animator = GetComponent<Animator>();
+        }
+
+        if (animator == null)
+        {
+            return;
+        }
+
+        animator.SetTrigger(animIDDead);
+        snappedToGroundOnDeath = false;
     }
 
     public void ResetElimination()
@@ -109,15 +136,36 @@ public class PlayerElimination : NetworkBehaviour
             {
                 if (bodyRenderers[i] != null)
                 {
-                    bodyRenderers[i].enabled = !eliminated;
+                    bodyRenderers[i].enabled = true;
                 }
             }
+        }
+
+        if (eliminated && animator != null)
+        {
+            animator.SetTrigger(animIDDead);
+            snappedToGroundOnDeath = false;
         }
 
         if (eliminated && Object != null && Object.HasStateAuthority && playerStateManager != null)
         {
             string playerId = Object.InputAuthority.RawEncoded.ToString();
             playerStateManager.MarkDead(playerId);
+        }
+    }
+
+    private void LateUpdate()
+    {
+        if (IsEliminated == false || snappedToGroundOnDeath)
+        {
+            return;
+        }
+
+        Vector3 origin = transform.position + Vector3.up * 1f;
+        if (Physics.Raycast(origin, Vector3.down, out RaycastHit hit, 20f, deathGroundLayers, QueryTriggerInteraction.Ignore))
+        {
+            transform.position = hit.point;
+            snappedToGroundOnDeath = true;
         }
     }
 }

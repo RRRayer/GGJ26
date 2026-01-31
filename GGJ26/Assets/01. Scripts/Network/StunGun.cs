@@ -28,6 +28,11 @@ public class StunGun : NetworkBehaviour
     private float lastFireTime = -999f;
     private Camera mainCamera;
     private PlayerElimination elimination;
+    private Animator animator;
+    private int animIDShoot;
+    private bool rotateToCamera;
+    private float rotateTimer;
+    [SerializeField] private float rotateDuration = 0.05f;
 
     private static GameObject crosshairRoot;
     private static Image crosshairImage;
@@ -37,6 +42,8 @@ public class StunGun : NetworkBehaviour
         role = GetComponent<PlayerRole>();
         mainCamera = Camera.main;
         elimination = GetComponent<PlayerElimination>();
+        animator = GetComponent<Animator>();
+        animIDShoot = Animator.StringToHash("Shoot");
     }
 
     private void Update()
@@ -49,6 +56,11 @@ public class StunGun : NetworkBehaviour
         UpdateCrosshair();
 
         if (role != null && role.IsSeeker == false)
+        {
+            return;
+        }
+
+        if (DanceEventPublisher.IsGroupDanceActive || DanceEventPublisher.IsAnyMaskDanceActive)
         {
             return;
         }
@@ -73,7 +85,9 @@ public class StunGun : NetworkBehaviour
         }
 
         lastFireTime = Time.time;
+        RpcTriggerShoot();
         PlaySfx(shootSfxCue, transform.position);
+        BeginLookToCamera();
         Ray ray = new Ray(mainCamera.transform.position, mainCamera.transform.forward);
         if (Physics.Raycast(ray, out RaycastHit hit, range, hitMask, QueryTriggerInteraction.Ignore) == false)
         {
@@ -89,23 +103,26 @@ public class StunGun : NetworkBehaviour
             var npc = hit.collider.GetComponentInParent<BaseNPC>();
             if (npc != null)
             {
+                var npcController = npc.GetComponent<NPCController>();
+                if (npcController != null)
+                {
+                    npcController.RpcTriggerDead();
+                }
                 RpcSpawnFogEffect(npc.transform.position, npc.transform.rotation);
                 var npcObject = npc.GetComponent<NetworkObject>();
                 if (npcObject != null && Runner != null && Runner.IsRunning)
                 {
-                    if (Object.HasStateAuthority)
-                    {
-                        Runner.Despawn(npcObject);
-                    }
+                    // Keep the NPC body visible; do not despawn.
                 }
                 else
                 {
-                    Destroy(npc.gameObject);
+                    // Keep the NPC body visible; do not destroy.
                 }
             }
             return;
         }
 
+        target.RpcPlayDeadAnimation();
         target.RpcRequestEliminate();
     }
 
@@ -135,6 +152,21 @@ public class StunGun : NetworkBehaviour
     }
 
     [Rpc(RpcSources.InputAuthority, RpcTargets.All)]
+    private void RpcTriggerShoot()
+    {
+        if (animator == null)
+        {
+            animator = GetComponent<Animator>();
+        }
+        if (animator == null)
+        {
+            return;
+        }
+
+        animator.SetTrigger(animIDShoot);
+    }
+
+    [Rpc(RpcSources.InputAuthority, RpcTargets.All)]
     private void RpcSpawnFogEffect(Vector3 position, Quaternion rotation)
     {
         if (fogEffectPrefab == null)
@@ -150,6 +182,7 @@ public class StunGun : NetworkBehaviour
     {
         PlaySfx(hitSfxCue, position);
     }
+
 
     private void UpdateCrosshair()
     {
@@ -242,6 +275,50 @@ public class StunGun : NetworkBehaviour
             Destroy(crosshairRoot);
             crosshairRoot = null;
             crosshairImage = null;
+        }
+    }
+
+    private void BeginLookToCamera()
+    {
+        if (mainCamera == null)
+        {
+            return;
+        }
+
+        rotateToCamera = true;
+        rotateTimer = 0f;
+    }
+
+    private void LateUpdate()
+    {
+        if (rotateToCamera == false)
+        {
+            return;
+        }
+
+        if (mainCamera == null)
+        {
+            rotateToCamera = false;
+            return;
+        }
+
+        Vector3 forward = mainCamera.transform.forward;
+        forward.y = 0f;
+        if (forward.sqrMagnitude < 0.0001f)
+        {
+            rotateToCamera = false;
+            return;
+        }
+
+        float duration = Mathf.Max(0.001f, rotateDuration);
+        rotateTimer += Time.deltaTime;
+        float t = Mathf.Clamp01(rotateTimer / duration);
+        Quaternion target = Quaternion.LookRotation(forward.normalized, Vector3.up);
+        transform.rotation = Quaternion.Slerp(transform.rotation, target, t);
+
+        if (t >= 1f)
+        {
+            rotateToCamera = false;
         }
     }
 }

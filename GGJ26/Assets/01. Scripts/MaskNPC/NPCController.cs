@@ -84,6 +84,7 @@ public class NPCController : NetworkBehaviour
     private int animIDStartDance;
     private int animIDStopDance;
     private int animIDDanceIndex;
+    private int animIDDead;
 
     // components
     private Animator animator;
@@ -101,6 +102,10 @@ public class NPCController : NetworkBehaviour
     [Networked] private float NetAnimMotionSpeed { get; set; }
     [Networked] private NetworkBool NetAnimGrounded { get; set; }
     [Networked] private float NetVerticalVelocity { get; set; }
+    [Networked] public NetworkBool IsDead { get; private set; }
+    [Networked] private NetworkBool IsDancing { get; set; }
+    private bool snappedToGroundOnDeath;
+    private bool hasSpawned;
 
     private void Start()
     {
@@ -116,6 +121,33 @@ public class NPCController : NetworkBehaviour
 
     public override void FixedUpdateNetwork()
     {
+        if (hasSpawned == false)
+        {
+            return;
+        }
+
+        if (IsDead)
+        {
+            if (agent != null)
+            {
+                agent.isStopped = true;
+            }
+
+            NetIsStopped = true;
+            NetHasDestination = false;
+            moveDirection = Vector3.zero;
+            verticalVelocity = 0f;
+            IsDancing = false;
+            if (Object != null && Object.HasStateAuthority)
+            {
+                NetAnimSpeed = 0f;
+                NetAnimMotionSpeed = 0f;
+                NetAnimGrounded = Grounded;
+                NetVerticalVelocity = 0f;
+            }
+            return;
+        }
+
         float deltaTime = GetDeltaTime();
         if (debugNpc)
         {
@@ -149,6 +181,26 @@ public class NPCController : NetworkBehaviour
         bool hasState = Object != null && Object.HasStateAuthority;
         bool ccEnabled = controller != null && controller.enabled;
         Debug.Log($"[NPCController] state={hasState} grounded={Grounded} vVel={verticalVelocity:F2} posY={transform.position.y:F2} cc={ccEnabled}", this);
+    }
+
+    private void LateUpdate()
+    {
+        if (hasSpawned == false)
+        {
+            return;
+        }
+
+        if (IsDead == false || snappedToGroundOnDeath)
+        {
+            return;
+        }
+
+        Vector3 origin = transform.position + Vector3.up * 1f;
+        if (Physics.Raycast(origin, Vector3.down, out RaycastHit hit, 20f, GroundLayers, QueryTriggerInteraction.Ignore))
+        {
+            transform.position = hit.point;
+            snappedToGroundOnDeath = true;
+        }
     }
 
     #region Public Methods for AI Control
@@ -236,6 +288,17 @@ public class NPCController : NetworkBehaviour
 
     public void StartDance(int danceIndex)
     {
+        if (IsDead)
+        {
+            return;
+        }
+
+        if (Object != null && Object.HasStateAuthority)
+        {
+            IsDancing = true;
+            NetIsStopped = true;
+            NetHasDestination = false;
+        }
         SetMovement(Vector3.zero, false);
 
         if (animator == null)
@@ -256,6 +319,16 @@ public class NPCController : NetworkBehaviour
 
     public void StopDance()
     {
+        if (IsDead)
+        {
+            return;
+        }
+
+        if (Object != null && Object.HasStateAuthority)
+        {
+            IsDancing = false;
+            NetIsStopped = false;
+        }
         if (animator == null)
         {
             animator = GetComponent<Animator>();
@@ -271,10 +344,51 @@ public class NPCController : NetworkBehaviour
         animator.SetTrigger(animIDStopDance);
     }
 
+    [Rpc(RpcSources.All, RpcTargets.All)]
+    public void RpcTriggerDead()
+    {
+        if (Object != null && Object.HasStateAuthority)
+        {
+            IsDead = true;
+        }
+        IsDancing = false;
+        snappedToGroundOnDeath = false;
+        if (animator == null)
+        {
+            animator = GetComponent<Animator>();
+        }
+        if (animator == null)
+        {
+            return;
+        }
+
+        animator.SetTrigger(animIDDead);
+    }
+
     #endregion
 
     private void ApplyNetworkCommands()
     {
+        if (IsDead)
+        {
+            if (agent != null)
+            {
+                agent.isStopped = true;
+            }
+            moveDirection = Vector3.zero;
+            return;
+        }
+
+        if (IsDancing)
+        {
+            if (agent != null)
+            {
+                agent.isStopped = true;
+            }
+            moveDirection = Vector3.zero;
+            return;
+        }
+
         if (NetJumpCounter != lastJumpCounter)
         {
             lastJumpCounter = NetJumpCounter;
@@ -311,6 +425,12 @@ public class NPCController : NetworkBehaviour
         animIDStartDance = Animator.StringToHash("StartDance");
         animIDStopDance = Animator.StringToHash("StopDance");
         animIDDanceIndex = Animator.StringToHash("DanceIndex");
+        animIDDead = Animator.StringToHash("Dead");
+    }
+
+    public override void Spawned()
+    {
+        hasSpawned = true;
     }
 
     private void GroundedCheck()

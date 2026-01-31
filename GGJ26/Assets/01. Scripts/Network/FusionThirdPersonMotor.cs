@@ -52,6 +52,7 @@ public class FusionThirdPersonMotor : NetworkBehaviour
     private bool isGrounded; // This is now a simple local bool for the State Authority
     private PlayerRole role;
     private int lastDanceIndex = -1;
+    private PlayerElimination elimination;
     
     // --- FIX: Added for local animation state calculation ---
     private Vector3 lastRenderPosition;
@@ -63,6 +64,7 @@ public class FusionThirdPersonMotor : NetworkBehaviour
         controller = GetComponent<CharacterController>();
         mainCamera = Camera.main;
         role = GetComponent<PlayerRole>();
+        elimination = GetComponent<PlayerElimination>();
         if (mainCamera == null)
         {
             var cameraObject = GameObject.FindGameObjectWithTag("MainCamera");
@@ -100,6 +102,11 @@ public class FusionThirdPersonMotor : NetworkBehaviour
 
     public void StartDance(int danceIndex)
     {
+        if (elimination != null && elimination.IsEliminated)
+        {
+            return;
+        }
+
         if (hasAnimator == false) return;
 
         NetDanceIndex = danceIndex;
@@ -109,6 +116,11 @@ public class FusionThirdPersonMotor : NetworkBehaviour
 
     public void StopDance()
     {
+        if (elimination != null && elimination.IsEliminated)
+        {
+            return;
+        }
+
         if (hasAnimator == false) return;
 
         NetIsDancing = false;
@@ -124,6 +136,16 @@ public class FusionThirdPersonMotor : NetworkBehaviour
 
         if (controller == null)
         {
+            return;
+        }
+
+        if (elimination != null && elimination.IsEliminated)
+        {
+            if (NetIsDancing)
+            {
+                NetIsDancing = false;
+                ApplyDanceStop();
+            }
             return;
         }
 

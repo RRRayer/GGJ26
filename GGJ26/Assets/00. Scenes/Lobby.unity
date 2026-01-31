@@ -3546,7 +3546,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a0b0d26a9a134b198dc05dde039f1156, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxPlayers: 1
+  maxPlayers: 2
   gameScenePath: Assets/00. Scenes/GameScene.unity
   autoStartOnAwake: 0
   playerPrefab: {fileID: 3978347823390045238, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
