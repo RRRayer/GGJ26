@@ -50,46 +50,10 @@ MonoBehaviour:
     - model: {fileID: 8926484042661617621}
       id: 0
       isStickyNote: 0
-    - model: {fileID: 8926484042661617623}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661617630}
-      id: 0
-      isStickyNote: 0
     - model: {fileID: 8926484042661617633}
       id: 0
       isStickyNote: 0
-    - model: {fileID: 8926484042661617637}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661617640}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661617642}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661617645}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661617648}
-      id: 0
-      isStickyNote: 0
     - model: {fileID: 8926484042661617573}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661617588}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661617654}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661617700}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661617683}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661617668}
       id: 0
       isStickyNote: 0
   - title: Trail
@@ -106,40 +70,10 @@ MonoBehaviour:
     - model: {fileID: 8926484042661617084}
       id: 0
       isStickyNote: 0
-    - model: {fileID: 8926484042661617088}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661617460}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661617260}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661617094}
-      id: 0
-      isStickyNote: 0
     - model: {fileID: 8926484042661617036}
       id: 0
       isStickyNote: 0
     - model: {fileID: 8926484042661617039}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661617441}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661617419}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661617448}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661617450}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661617452}
-      id: 0
-      isStickyNote: 0
-    - model: {fileID: 8926484042661617454}
       id: 0
       isStickyNote: 0
     - model: {fileID: 8926484042661617464}
@@ -4551,7 +4485,7 @@ MonoBehaviour:
   m_OutputSlots: []
   m_Disabled: 0
   m_ActivationSlot: {fileID: 8926484042661617510}
-  repeat: 1
+  repeat: 0
   spawnMode: 0
   delayMode: 0
 --- !u!114 &8926484042661617508
