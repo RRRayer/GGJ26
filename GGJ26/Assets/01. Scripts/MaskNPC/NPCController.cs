@@ -234,6 +234,32 @@ public class NPCController : NetworkBehaviour
             return;
         }
 
+        if (IsDead || IsDancing)
+        {
+            NetHasDestination = false;
+            return;
+        }
+
+        if (agent != null)
+        {
+            if (agent.isOnNavMesh == false)
+            {
+                NetHasDestination = false;
+                return;
+            }
+
+            UnityEngine.AI.NavMeshHit hit;
+            if (UnityEngine.AI.NavMesh.SamplePosition(destination, out hit, 2.0f, UnityEngine.AI.NavMesh.AllAreas))
+            {
+                destination = hit.position;
+            }
+            else
+            {
+                NetHasDestination = false;
+                return;
+            }
+        }
+
         NetDestination = destination;
         NetHasDestination = true;
         if (agent != null)

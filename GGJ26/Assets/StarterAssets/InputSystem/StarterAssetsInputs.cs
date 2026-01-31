@@ -131,6 +131,14 @@ namespace StarterAssets
 		Cursor.lockState = CursorLockMode.None;
 		Cursor.visible = true;
 	}
+
+	public void ForceCursorLocked()
+	{
+		cursorLocked = true;
+		cursorInputForLook = true;
+		Cursor.lockState = CursorLockMode.Locked;
+		Cursor.visible = false;
+	}
 	}
 	
 }

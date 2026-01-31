@@ -161,6 +161,7 @@ public class GameManager : NetworkBehaviour
             Debug.LogWarning("[GameManager] uiCanvasManager was not assigned. Found by type.");
         }
 
+        LockCursorForGameplay();
         remainingSeconds = totalGameSeconds;
         if (hasSpawned && Object != null && Object.HasStateAuthority)
         {
@@ -178,6 +179,18 @@ public class GameManager : NetworkBehaviour
             StopCoroutine(_autoSaveRoutine);
         }
         _autoSaveRoutine = StartCoroutine(AutoSaveRoutine());
+    }
+
+    private void LockCursorForGameplay()
+    {
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+
+        var inputs = FindFirstObjectByType<StarterAssets.StarterAssetsInputs>();
+        if (inputs != null)
+        {
+            inputs.ForceCursorLocked();
+        }
     }
 
     private void CleanupGame()

@@ -118,10 +118,16 @@ public class StunGun : NetworkBehaviour
         RpcPlayMuzzleVfx();
         PlaySfx(shootSfxCue, transform.position);
         BeginLookToCamera();
-        Ray ray = new Ray(mainCamera.transform.position, mainCamera.transform.forward);
-        bool hasHit = Physics.Raycast(ray, out RaycastHit hit, range, hitMask, QueryTriggerInteraction.Ignore);
-        Vector3 hitPoint = hasHit ? hit.point : ray.origin + ray.direction * range;
-        Vector3 hitNormal = hasHit ? hit.normal : -ray.direction;
+        Ray aimRay = new Ray(mainCamera.transform.position, mainCamera.transform.forward);
+        bool aimHit = Physics.Raycast(aimRay, out RaycastHit aimHitInfo, range, hitMask, QueryTriggerInteraction.Ignore);
+        Vector3 aimPoint = aimHit ? aimHitInfo.point : aimRay.origin + aimRay.direction * range;
+
+        Vector3 fireOrigin = shootTransform != null ? shootTransform.position : aimRay.origin;
+        Vector3 fireDirection = (aimPoint - fireOrigin).normalized;
+        Ray fireRay = new Ray(fireOrigin, fireDirection);
+        bool hasHit = Physics.Raycast(fireRay, out RaycastHit hit, range, hitMask, QueryTriggerInteraction.Ignore);
+        Vector3 hitPoint = hasHit ? hit.point : aimPoint;
+        Vector3 hitNormal = hasHit ? hit.normal : -fireDirection;
 
         SpawnHitEffect(hitPoint, hitNormal);
         RpcPlayHitSfx(hitPoint);
