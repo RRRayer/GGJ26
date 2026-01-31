@@ -1115,6 +1115,9 @@ MonoBehaviour:
   hitMask:
     serializedVersion: 2
     m_Bits: 119
+  impactMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
   hitEffectPrefab: {fileID: 2684650621357901133, guid: f5d2b0efcb9d61c47909c81db6aeb8f4, type: 3}
   hitEffectLifetime: 1.5
   shootTransform: {fileID: 8645168656686294115}

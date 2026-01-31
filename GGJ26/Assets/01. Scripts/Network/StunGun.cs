@@ -8,6 +8,7 @@ public class StunGun : NetworkBehaviour
     [SerializeField] private float range = 6f;
     [SerializeField] private float cooldownSeconds = 5f;
     [SerializeField] private LayerMask hitMask = -1;
+    [SerializeField] private LayerMask impactMask = -1;
     // [Header("Crosshair")]
     // [SerializeField] private bool showCrosshair = true;
     // [SerializeField] private int crosshairSize = 24;
@@ -115,7 +116,6 @@ public class StunGun : NetworkBehaviour
         lastFireTime = Time.time;
         StartCoroutine(CooldownVisualCoroutine());
         RpcTriggerShoot();
-        RpcPlayMuzzleVfx();
         PlaySfx(shootSfxCue, transform.position);
         BeginLookToCamera();
         Ray aimRay = new Ray(mainCamera.transform.position, mainCamera.transform.forward);
@@ -126,9 +126,12 @@ public class StunGun : NetworkBehaviour
         Vector3 fireDirection = (aimPoint - fireOrigin).normalized;
         Ray fireRay = new Ray(fireOrigin, fireDirection);
         bool hasHit = Physics.Raycast(fireRay, out RaycastHit hit, range, hitMask, QueryTriggerInteraction.Ignore);
-        Vector3 hitPoint = hasHit ? hit.point : aimPoint;
-        Vector3 hitNormal = hasHit ? hit.normal : -fireDirection;
 
+        bool hasImpact = Physics.Raycast(fireRay, out RaycastHit impactHit, range, impactMask, QueryTriggerInteraction.Ignore);
+        Vector3 hitPoint = hasImpact ? impactHit.point : aimPoint;
+        Vector3 hitNormal = hasImpact ? impactHit.normal : -fireDirection;
+
+        RpcPlayMuzzleVfx(fireDirection);
         SpawnHitEffect(hitPoint, hitNormal);
         RpcPlayHitSfx(hitPoint);
 
@@ -228,11 +231,16 @@ public class StunGun : NetworkBehaviour
     }
 
     [Rpc(RpcSources.InputAuthority, RpcTargets.All)]
-    private void RpcPlayMuzzleVfx()
+    private void RpcPlayMuzzleVfx(Vector3 direction)
     {
         if (shootVfx == null && shootTransform != null)
         {
             shootVfx = shootTransform.GetComponent<UnityEngine.VFX.VisualEffect>();
+        }
+
+        if (shootTransform != null && direction.sqrMagnitude > 0.0001f)
+        {
+            shootTransform.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
         }
 
         if (shootVfx != null)
