@@ -30,6 +30,11 @@ public class RedNPC : BaseNPC
 
     private void Start()
     {
+        if (HasStateAuthority == false)
+        {
+            return;
+        }
+
         // 초기 상태를 랜덤으로 설정합니다.
         if (Random.value < 0.5f) // 50% 확률로 Running, 50% 확률로 Idling
         {
@@ -58,7 +63,7 @@ public class RedNPC : BaseNPC
         agent.nextPosition = transform.position;
 
         // 현재 상태의 타이머를 감소시키고, 시간이 다 되면 상태를 변경합니다.
-        maskStateTimer -= Time.deltaTime;
+        maskStateTimer -= GetDeltaTime();
         if (maskStateTimer <= 0)
         {
             SwitchMaskState();

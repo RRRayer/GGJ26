@@ -30,6 +30,11 @@ public class BlueNPC : BaseNPC
 
     private void Start()
     {
+        if (HasStateAuthority == false)
+        {
+            return;
+        }
+
         // 초기 상태를 랜덤으로 설정합니다.
         if (Random.value < 0.5f)
         {
@@ -50,7 +55,7 @@ public class BlueNPC : BaseNPC
 
         agent.nextPosition = transform.position;
 
-        maskStateTimer -= Time.deltaTime;
+        maskStateTimer -= GetDeltaTime();
         if (maskStateTimer <= 0)
         {
             // 현재 상태가 달리기였으면 걷기로, 걷기였으면 달리기로 변경
@@ -75,7 +80,7 @@ public class BlueNPC : BaseNPC
     private void SetState(MaskState newState)
     {
         currentMaskState = newState;
-        agent.isStopped = false; // BlueNPC는 멈추지 않고 계속 움직입니다.
+        NpcController.SetCommandStopped(false); // BlueNPC는 멈추지 않고 계속 움직입니다.
 
         if (newState == MaskState.Running)
         {
@@ -96,7 +101,7 @@ public class BlueNPC : BaseNPC
     {
         if (wanderProvider.GetRandomNavMeshPoint(out Vector3 destination))
         {
-            agent.SetDestination(destination);
+            NpcController.SetCommandDestination(destination);
         }
     }
 

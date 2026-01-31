@@ -514,6 +514,8 @@ MonoBehaviour:
   GroundLayers:
     serializedVersion: 2
     m_Bits: 1
+  debugNpc: 0
+  debugInterval: 1
 --- !u!195 &2165630663973288436
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -586,7 +588,8 @@ MonoBehaviour:
   ObjectInterest: 1
   Flags: 262145
   NestedObjects: []
-  NetworkedBehaviours: []
+  NetworkedBehaviours:
+  - {fileID: 4758391324168672161}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &3919135070344895946
 MonoBehaviour:

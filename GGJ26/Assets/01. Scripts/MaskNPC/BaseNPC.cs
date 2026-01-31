@@ -1,9 +1,6 @@
-using Cinemachine;
 using Fusion;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.AI;
-using UnityEngine.UI;
 
 /// <summary>
 /// 모든 NPC 스크립트가 상속받을 부모 추상 클래스입니다.
@@ -16,6 +13,13 @@ public abstract class BaseNPC : MonoBehaviour
     protected NPCController NpcController { get; private set; }
     protected NavMeshAgent agent;
     protected WanderPointProvider wanderProvider;
+    protected bool HasStateAuthority
+    {
+        get
+        {
+            return NpcController != null && NpcController.Object != null && NpcController.Object.HasStateAuthority;
+        }
+    }
 
     [Header("이벤트 채널 - Listening to")]
     [SerializeField] private BoolEventChannelSO OnGroupDanceStart;
@@ -78,10 +82,25 @@ public abstract class BaseNPC : MonoBehaviour
     /// </summary>
     private void Update()
     {
+        if (HasStateAuthority == false)
+        {
+            return;
+        }
+
         if (currentState == ActionState.MaskBehavior)
         {
             ExecuteMaskBehavior();
         }
+    }
+
+    protected float GetDeltaTime()
+    {
+        if (NpcController != null)
+        {
+            return NpcController.GetDeltaTime();
+        }
+
+        return Time.deltaTime;
     }
 
     /// <summary>
@@ -96,6 +115,10 @@ public abstract class BaseNPC : MonoBehaviour
     /// <param name="isStart"></param>
     protected void ExecuteMaskDance(int danceIndex)
     {
+        if (HasStateAuthority == false)
+        {
+            return;
+        }
         if (currentState == ActionState.GroupDance)
         {
             // 단체 댄스 중일 때는 가면 댄스로 전환하지 않음
@@ -119,6 +142,10 @@ public abstract class BaseNPC : MonoBehaviour
     /// <param name="isStart"></param>
     protected void ExecuteGroupDance(bool isStart)
     {
+        if (HasStateAuthority == false)
+        {
+            return;
+        }
         if (NpcController == null)
         {
             return;

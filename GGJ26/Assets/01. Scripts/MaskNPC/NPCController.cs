@@ -1,11 +1,9 @@
+using Fusion;
 using UnityEngine;
-
 
 [RequireComponent(typeof(CharacterController))]
 [RequireComponent(typeof(Animator))]
-// NPC 움직임 및 애니메이션 제어
-
-public class NPCController : MonoBehaviour
+public class NPCController : NetworkBehaviour
 {
     [Header("NPC Movement")]
     [Tooltip("Move speed of the character in m/s")]
@@ -24,7 +22,7 @@ public class NPCController : MonoBehaviour
     public AudioClip LandingAudioClip;
     public AudioClip[] FootstepAudioClips;
     [Range(0, 1)] public float FootstepAudioVolume = 0.5f;
-    
+
     [Header("SFX Channel (optional)")]
     [SerializeField] private AudioCueEventChannelSO sfxEventChannel;
     [SerializeField] private AudioConfigurationSO sfxConfiguration;
@@ -57,224 +55,329 @@ public class NPCController : MonoBehaviour
 
     [Tooltip("What layers the character uses as ground")]
     public LayerMask GroundLayers;
-    
-    // --- private fields ---
-    
-    // movement
-    private float _speed;
-    private float _animationBlend;
-    private float _targetRotation = 0.0f;
-    private float _rotationVelocity;
-    private float _verticalVelocity;
-    private float _terminalVelocity = 53.0f;
-    private Vector3 _moveDirection = Vector3.zero;
-    private bool _isSprinting = false;
-    private bool _shouldJump = false;
 
-    // timeout deltatime
-    private float _jumpTimeoutDelta;
-    private float _fallTimeoutDelta;
+    [Header("Debug")]
+    [SerializeField] private bool debugNpc = false;
+    [SerializeField] private float debugInterval = 1f;
+
+    // movement
+    private float speed;
+    private float animationBlend;
+    private float targetRotation;
+    private float rotationVelocity;
+    private float verticalVelocity;
+    private float terminalVelocity = 53.0f;
+    private Vector3 moveDirection = Vector3.zero;
+    private bool isSprinting;
+    private bool shouldJump;
+
+    // timeout
+    private float jumpTimeoutDelta;
+    private float fallTimeoutDelta;
 
     // animation IDs
-    private int _animIDSpeed;
-    private int _animIDGrounded;
-    private int _animIDJump;
-    private int _animIDFreeFall;
-    private int _animIDMotionSpeed;
-    private int _animIDStartDance; 
-    private int _animIDStopDance; 
-    private int _animIDDanceIndex; 
+    private int animIDSpeed;
+    private int animIDGrounded;
+    private int animIDJump;
+    private int animIDFreeFall;
+    private int animIDMotionSpeed;
+    private int animIDStartDance;
+    private int animIDStopDance;
+    private int animIDDanceIndex;
 
     // components
-    private Animator _animator;
-    private CharacterController _controller;
+    private Animator animator;
+    private CharacterController controller;
+    private UnityEngine.AI.NavMeshAgent agent;
+    private float debugTimer;
+    private int lastJumpCounter;
+
+    [Networked] private Vector3 NetDestination { get; set; }
+    [Networked] private NetworkBool NetHasDestination { get; set; }
+    [Networked] private NetworkBool NetIsStopped { get; set; }
+    [Networked] private NetworkBool NetIsSprinting { get; set; }
+    [Networked] private int NetJumpCounter { get; set; }
 
     private void Start()
     {
-        _controller = GetComponent<CharacterController>();
-        _animator = GetComponent<Animator>();
+        controller = GetComponent<CharacterController>();
+        animator = GetComponent<Animator>();
+        agent = GetComponent<UnityEngine.AI.NavMeshAgent>();
 
         AssignAnimationIDs();
 
-        // reset our timeouts on start
-        _jumpTimeoutDelta = JumpTimeout;
-        _fallTimeoutDelta = FallTimeout;
+        jumpTimeoutDelta = JumpTimeout;
+        fallTimeoutDelta = FallTimeout;
     }
 
-    private void Update()
+    public override void FixedUpdateNetwork()
     {
-        JumpAndGravity();
+        float deltaTime = GetDeltaTime();
+        if (debugNpc)
+        {
+            UpdateDebugTimer(deltaTime);
+        }
+
+        ApplyNetworkCommands();
+
+        JumpAndGravity(deltaTime);
         GroundedCheck();
-        Move();
+        Move(deltaTime);
+    }
+
+    private void UpdateDebugTimer(float deltaTime)
+    {
+        debugTimer += deltaTime;
+        if (debugTimer < debugInterval)
+        {
+            return;
+        }
+
+        debugTimer = 0f;
+        bool hasState = Object != null && Object.HasStateAuthority;
+        bool ccEnabled = controller != null && controller.enabled;
+        Debug.Log($"[NPCController] state={hasState} grounded={Grounded} vVel={verticalVelocity:F2} posY={transform.position.y:F2} cc={ccEnabled}", this);
     }
 
     #region Public Methods for AI Control
-    
-    /// <summary>
-    /// Sets the direction for the NPC to move. Called by an AI controller.
-    /// </summary>
-    /// <param name="direction">The desired movement direction.</param>
-    /// <param name="isSprinting">Whether the NPC should sprint.</param>
-    public void SetMovement(Vector3 direction, bool isSprinting = false)
+
+    public void SetMovement(Vector3 direction, bool sprinting = false)
     {
-        _moveDirection = direction;
-        _isSprinting = isSprinting;
+        moveDirection = direction;
+        isSprinting = sprinting;
     }
 
-    /// <summary>
-    /// Makes the NPC attempt to jump. Called by an AI controller.
-    /// </summary>
+    public bool TryQueueJump()
+    {
+        if (Object == null || Object.HasStateAuthority == false)
+        {
+            return false;
+        }
+
+        if (Grounded && jumpTimeoutDelta <= 0.0f)
+        {
+            NetJumpCounter++;
+            return true;
+        }
+
+        return false;
+    }
+
+    public void SetCommandDestination(Vector3 destination)
+    {
+        if (Object == null || Object.HasStateAuthority == false)
+        {
+            return;
+        }
+
+        NetDestination = destination;
+        NetHasDestination = true;
+        if (agent != null)
+        {
+            agent.SetDestination(destination);
+        }
+    }
+
+    public void SetCommandStopped(bool stopped)
+    {
+        if (Object == null || Object.HasStateAuthority == false)
+        {
+            return;
+        }
+
+        NetIsStopped = stopped;
+        if (agent != null)
+        {
+            agent.isStopped = stopped;
+        }
+    }
+
+    public void SetCommandSprinting(bool sprinting)
+    {
+        if (Object == null || Object.HasStateAuthority == false)
+        {
+            return;
+        }
+
+        NetIsSprinting = sprinting;
+    }
+
+    public float GetDeltaTime()
+    {
+        if (Runner != null && Runner.IsRunning)
+        {
+            return Runner.DeltaTime;
+        }
+
+        return Time.deltaTime;
+    }
+
     public bool TriggerJump()
     {
-        if (Grounded && _jumpTimeoutDelta <= 0.0f)
+        if (Grounded && jumpTimeoutDelta <= 0.0f)
         {
-            _shouldJump = true;
+            shouldJump = true;
             return true;
         }
         return false;
     }
 
-    /// <summary>
-    /// Starts one of the dance animations.
-    /// </summary>
-    /// <param name="danceIndex">The index of the dance to play (e.g., 0-3).</param>
     public void StartDance(int danceIndex)
     {
-        // Make the NPC stop moving
         SetMovement(Vector3.zero, false);
-    
-        _animator.SetInteger(_animIDDanceIndex, danceIndex);
-        _animator.SetTrigger(_animIDStartDance);
+        if (animator == null)
+        {
+            return;
+        }
+
+        animator.SetInteger(animIDDanceIndex, danceIndex);
+        animator.SetTrigger(animIDStartDance);
     }
 
-    /// <summary>
-    /// Stops the dance animation and returns to normal locomotion.
-    /// </summary>
     public void StopDance()
     {
-        _animator.SetTrigger(_animIDStopDance);
+        if (animator == null)
+        {
+            return;
+        }
+
+        animator.SetTrigger(animIDStopDance);
     }
 
     #endregion
 
+    private void ApplyNetworkCommands()
+    {
+        if (NetJumpCounter != lastJumpCounter)
+        {
+            lastJumpCounter = NetJumpCounter;
+            TriggerJump();
+        }
+
+        if (agent != null)
+        {
+            agent.isStopped = NetIsStopped;
+            if (NetHasDestination)
+            {
+                agent.SetDestination(NetDestination);
+            }
+            agent.nextPosition = transform.position;
+        }
+
+        if (agent != null && agent.hasPath && agent.isStopped == false)
+        {
+            SetMovement(agent.desiredVelocity.normalized, NetIsSprinting);
+        }
+        else
+        {
+            SetMovement(Vector3.zero, false);
+        }
+    }
+
     private void AssignAnimationIDs()
     {
-        _animIDSpeed = Animator.StringToHash("Speed");
-        _animIDGrounded = Animator.StringToHash("Grounded");
-        _animIDJump = Animator.StringToHash("Jump");
-        _animIDFreeFall = Animator.StringToHash("FreeFall");
-        _animIDMotionSpeed = Animator.StringToHash("MotionSpeed");
-        _animIDStartDance = Animator.StringToHash("StartDance"); 
-        _animIDStopDance = Animator.StringToHash("StopDance");   
-        _animIDDanceIndex = Animator.StringToHash("DanceIndex"); 
+        animIDSpeed = Animator.StringToHash("Speed");
+        animIDGrounded = Animator.StringToHash("Grounded");
+        animIDJump = Animator.StringToHash("Jump");
+        animIDFreeFall = Animator.StringToHash("FreeFall");
+        animIDMotionSpeed = Animator.StringToHash("MotionSpeed");
+        animIDStartDance = Animator.StringToHash("StartDance");
+        animIDStopDance = Animator.StringToHash("StopDance");
+        animIDDanceIndex = Animator.StringToHash("DanceIndex");
     }
 
     private void GroundedCheck()
     {
-        // set sphere position, with offset
         Vector3 spherePosition = new Vector3(transform.position.x, transform.position.y - GroundedOffset, transform.position.z);
         Grounded = Physics.CheckSphere(spherePosition, GroundedRadius, GroundLayers, QueryTriggerInteraction.Ignore);
-        
-        _animator.SetBool(_animIDGrounded, Grounded);
+
+        animator.SetBool(animIDGrounded, Grounded);
     }
 
-    private void Move()
+    private void Move(float deltaTime)
     {
-        float targetSpeed = _isSprinting ? SprintSpeed : MoveSpeed;
-        if (_moveDirection == Vector3.zero) targetSpeed = 0.0f;
+        float targetSpeed = isSprinting ? SprintSpeed : MoveSpeed;
+        if (moveDirection == Vector3.zero) targetSpeed = 0.0f;
 
-        float currentHorizontalSpeed = new Vector3(_controller.velocity.x, 0.0f, _controller.velocity.z).magnitude;
+        float currentHorizontalSpeed = new Vector3(controller.velocity.x, 0.0f, controller.velocity.z).magnitude;
         float speedOffset = 0.1f;
-        float inputMagnitude = _moveDirection.magnitude;
+        float inputMagnitude = moveDirection.magnitude;
 
         if (currentHorizontalSpeed < targetSpeed - speedOffset || currentHorizontalSpeed > targetSpeed + speedOffset)
         {
-            _speed = Mathf.Lerp(currentHorizontalSpeed, targetSpeed * inputMagnitude, Time.deltaTime * SpeedChangeRate);
-            _speed = Mathf.Round(_speed * 1000f) / 1000f;
+            speed = Mathf.Lerp(currentHorizontalSpeed, targetSpeed * inputMagnitude, deltaTime * SpeedChangeRate);
+            speed = Mathf.Round(speed * 1000f) / 1000f;
         }
         else
         {
-            _speed = targetSpeed;
+            speed = targetSpeed;
         }
 
-        _animationBlend = Mathf.Lerp(_animationBlend, targetSpeed, Time.deltaTime * SpeedChangeRate);
-        if (_animationBlend < 0.01f) _animationBlend = 0f;
+        animationBlend = Mathf.Lerp(animationBlend, targetSpeed, deltaTime * SpeedChangeRate);
+        if (animationBlend < 0.01f) animationBlend = 0f;
 
-        Vector3 inputDirection = _moveDirection.normalized;
+        Vector3 inputDirection = moveDirection.normalized;
 
-        if (_moveDirection != Vector3.zero)
+        if (moveDirection != Vector3.zero)
         {
-            _targetRotation = Mathf.Atan2(inputDirection.x, inputDirection.z) * Mathf.Rad2Deg;
-            float rotation = Mathf.SmoothDampAngle(transform.eulerAngles.y, _targetRotation, ref _rotationVelocity, RotationSmoothTime);
+            targetRotation = Mathf.Atan2(inputDirection.x, inputDirection.z) * Mathf.Rad2Deg;
+            float rotation = Mathf.SmoothDampAngle(transform.eulerAngles.y, targetRotation, ref rotationVelocity, RotationSmoothTime);
             transform.rotation = Quaternion.Euler(0.0f, rotation, 0.0f);
         }
 
-        Vector3 targetDirection = Quaternion.Euler(0.0f, _targetRotation, 0.0f) * Vector3.forward;
-        
-        _controller.Move(targetDirection.normalized * (_speed * Time.deltaTime) + new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime);
+        Vector3 targetDirection = Quaternion.Euler(0.0f, targetRotation, 0.0f) * Vector3.forward;
 
-        _animator.SetFloat(_animIDSpeed, _animationBlend);
-        _animator.SetFloat(_animIDMotionSpeed, inputMagnitude);
+        controller.Move(targetDirection.normalized * (speed * deltaTime) + new Vector3(0.0f, verticalVelocity, 0.0f) * deltaTime);
+
+        animator.SetFloat(animIDSpeed, animationBlend);
+        animator.SetFloat(animIDMotionSpeed, inputMagnitude);
     }
 
-    private void JumpAndGravity()
+    private void JumpAndGravity(float deltaTime)
     {
         if (Grounded)
         {
-            _fallTimeoutDelta = FallTimeout;
-            
-            _animator.SetBool(_animIDJump, false);
-            _animator.SetBool(_animIDFreeFall, false);
+            fallTimeoutDelta = FallTimeout;
 
-            if (_verticalVelocity < 0.0f)
+            animator.SetBool(animIDJump, false);
+            animator.SetBool(animIDFreeFall, false);
+
+            if (verticalVelocity < 0.0f)
             {
-                _verticalVelocity = -2f;
+                verticalVelocity = -2f;
             }
 
-            if (_shouldJump && _jumpTimeoutDelta <= 0.0f)
+            if (shouldJump && jumpTimeoutDelta <= 0.0f)
             {
-                _verticalVelocity = Mathf.Sqrt(JumpHeight * -2f * Gravity);
-                _animator.SetBool(_animIDJump, true);
+                verticalVelocity = Mathf.Sqrt(JumpHeight * -2f * Gravity);
+                animator.SetBool(animIDJump, true);
             }
-            
-            if (_jumpTimeoutDelta >= 0.0f)
+
+            if (jumpTimeoutDelta >= 0.0f)
             {
-                _jumpTimeoutDelta -= Time.deltaTime;
+                jumpTimeoutDelta -= deltaTime;
             }
         }
         else
         {
-            _jumpTimeoutDelta = JumpTimeout;
-            
-            if (_fallTimeoutDelta >= 0.0f)
+            jumpTimeoutDelta = JumpTimeout;
+
+            if (fallTimeoutDelta >= 0.0f)
             {
-                _fallTimeoutDelta -= Time.deltaTime;
+                fallTimeoutDelta -= deltaTime;
             }
             else
             {
-                _animator.SetBool(_animIDFreeFall, true);
+                animator.SetBool(animIDFreeFall, true);
             }
         }
 
-        // apply gravity over time
-        if (_verticalVelocity < _terminalVelocity)
+        if (verticalVelocity < terminalVelocity)
         {
-            _verticalVelocity += Gravity * Time.deltaTime;
+            verticalVelocity += Gravity * deltaTime;
         }
 
-        // Reset jump trigger after processing
-        _shouldJump = false;
-    }
-
-    private void OnDrawGizmosSelected()
-    {
-        Color transparentGreen = new Color(0.0f, 1.0f, 0.0f, 0.35f);
-        Color transparentRed = new Color(1.0f, 0.0f, 0.0f, 0.35f);
-
-        if (Grounded) Gizmos.color = transparentGreen;
-        else Gizmos.color = transparentRed;
-        
-        Gizmos.DrawSphere(new Vector3(transform.position.x, transform.position.y - GroundedOffset, transform.position.z), GroundedRadius);
+        shouldJump = false;
     }
 
     private void OnFootstep(AnimationEvent animationEvent)
@@ -285,11 +388,11 @@ public class NPCController : MonoBehaviour
             {
                 return;
             }
-            
+
             if (FootstepAudioClips.Length > 0)
             {
                 var index = Random.Range(0, FootstepAudioClips.Length);
-                AudioSource.PlayClipAtPoint(FootstepAudioClips[index], transform.TransformPoint(_controller.center), FootstepAudioVolume);
+                AudioSource.PlayClipAtPoint(FootstepAudioClips[index], transform.TransformPoint(controller.center), FootstepAudioVolume);
             }
         }
     }
@@ -302,8 +405,8 @@ public class NPCController : MonoBehaviour
             {
                 return;
             }
-            
-            AudioSource.PlayClipAtPoint(LandingAudioClip, transform.TransformPoint(_controller.center), FootstepAudioVolume);
+
+            AudioSource.PlayClipAtPoint(LandingAudioClip, transform.TransformPoint(controller.center), FootstepAudioVolume);
         }
     }
 
@@ -321,7 +424,7 @@ public class NPCController : MonoBehaviour
             return false;
         }
 
-        sfxEventChannel.RaisePlayEvent(cue, sfxConfiguration, transform.TransformPoint(_controller.center));
+        sfxEventChannel.RaisePlayEvent(cue, sfxConfiguration, transform.TransformPoint(controller.center));
         return true;
     }
 
@@ -332,8 +435,7 @@ public class NPCController : MonoBehaviour
             return false;
         }
 
-        sfxEventChannel.RaisePlayEvent(landingSfxCue, sfxConfiguration, transform.TransformPoint(_controller.center));
+        sfxEventChannel.RaisePlayEvent(landingSfxCue, sfxConfiguration, transform.TransformPoint(controller.center));
         return true;
     }
 }
-

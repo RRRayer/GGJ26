@@ -23,6 +23,11 @@ public class GreenNPC : BaseNPC
 
     private void Start()
     {
+        if (HasStateAuthority == false)
+        {
+            return;
+        }
+
         // Start with a random state
         if (Random.value < 0.5f)
         {
