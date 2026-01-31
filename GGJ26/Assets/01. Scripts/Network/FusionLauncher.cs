@@ -483,6 +483,11 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
         SetMatchmakingState(false);
     }
 
+    public async void ShutdownRunner()
+    {
+        await RequestShutdownAsync();
+    }
+
     private async Task RequestShutdownAsync()
     {
         if (runner == null || runner.IsRunning == false)

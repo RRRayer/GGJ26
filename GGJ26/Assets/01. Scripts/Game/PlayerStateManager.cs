@@ -102,6 +102,7 @@ public class PlayerStateManager : MonoBehaviour
             }
         }
 
+        Debug.Log("Total Seekers Count: " + count);
         return count;
     }
 
@@ -115,13 +116,14 @@ public class PlayerStateManager : MonoBehaviour
                 count++;
             }
         }
+        Debug.Log("Total Non-Seekers Count: " + count);
         return count;
     }
 
     public bool AreAllNonSeekersDead()
     {
         // The game should end if there was at least one non-seeker to begin with, and now there are none left alive.
-        return GetTotalNonSeekersCount() > 0 && GetAliveNonSeekersCount() == 0;
+        return GetTotalNonSeekersCount() > 0 && GetAliveNonSeekersCount() == 0 || GetSeekersCount() == 0;
     }
 
     public bool TryGetLocalPlayer(out PlayerState state)

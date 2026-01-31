@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement; // Added
+using UnityEngine.UI; // Added
 
 public class UIResult : MonoBehaviour
 {
@@ -11,6 +13,7 @@ public class UIResult : MonoBehaviour
     [Header("UI")]
     [SerializeField] private Canvas ResultCanvas;
     [SerializeField] private TextMeshProUGUI txtResult;
+    [SerializeField] private Button confirmButton; // Added
     [SerializeField] private Canvas[] notResultCanvas;
     
     [Header("Game Data")]
@@ -23,6 +26,10 @@ public class UIResult : MonoBehaviour
         {
             onGameResult.OnEventRaised += OnGameResult;
         }
+        if (confirmButton != null) // Added listener
+        {
+            confirmButton.onClick.AddListener(OnConfirmButtonClicked);
+        }
     }
 
     private void OnDisable()
@@ -30,6 +37,10 @@ public class UIResult : MonoBehaviour
         if (onGameResult != null)
         {
             onGameResult.OnEventRaised -= OnGameResult;
+        }
+        if (confirmButton != null) // Removed listener
+        {
+            confirmButton.onClick.RemoveListener(OnConfirmButtonClicked);
         }
     }
 
@@ -53,5 +64,16 @@ public class UIResult : MonoBehaviour
         {
             txtResult.text = data.LocalPlayerWin ? "You Win!" : "You Lose!";
         }
+    }
+
+    private void OnConfirmButtonClicked() // Added handler
+    {
+        var launcher = FindFirstObjectByType<FusionLauncher>();
+        if (launcher != null)
+        {
+            launcher.ShutdownRunner();
+        }
+
+        SceneManager.LoadScene("Lobby");
     }
 }

@@ -1914,6 +1914,7 @@ MonoBehaviour:
   onGameResult: {fileID: 11400000, guid: 5a5f993efd703a642b33eede934483b7, type: 2}
   ResultCanvas: {fileID: 1227170225}
   txtResult: {fileID: 1292967745}
+  confirmButton: {fileID: 827956281}
   notResultCanvas:
   - {fileID: 238349070}
   - {fileID: 1772055395}

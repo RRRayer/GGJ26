@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Fusion;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
@@ -25,6 +26,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private float totalGameSeconds = 180f;
     [SerializeField] private PlayerStateManager playerStateManager;
     [SerializeField] private StatsManager statsManager;
+    [SerializeField] private string gameSceneName = "GameScene";
 
     [Header("Broadcasting on")]
     [SerializeField] private GameStateEventChannelSO onGameStateChanged;
@@ -34,11 +36,13 @@ public class GameManager : MonoBehaviour
 
     [Header("UI")]
     [SerializeField] private TextMeshProUGUI txtTimer;
+    
     private GameObject player;
     private GameState currentGameState = GameState.None;
     private float remainingSeconds;
     private bool hasEnded;
     private bool isGroupDanceActive;
+    private Coroutine _autoSaveRoutine;
 
     public bool IsGroupDanceActive => isGroupDanceActive;
 
@@ -49,6 +53,12 @@ public class GameManager : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+            return;
         }
 
         if (saveLoadSystem != null)
@@ -61,6 +71,7 @@ public class GameManager : MonoBehaviour
 
     private void OnEnable()
     {
+        SceneManager.sceneLoaded += OnSceneLoaded;
         if (groupDanceActiveEvent != null)
         {
             groupDanceActiveEvent.OnEventRaised += OnGroupDanceActive;
@@ -69,31 +80,93 @@ public class GameManager : MonoBehaviour
 
     private void OnDisable()
     {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
         if (groupDanceActiveEvent != null)
         {
             groupDanceActiveEvent.OnEventRaised -= OnGroupDanceActive;
         }
     }
 
-    private IEnumerator Start()
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
+        if (scene.name == gameSceneName)
+        {
+            StartNewGame();
+        }
+        else
+        {
+            CleanupGame();
+        }
+    }
+
+    private void StartNewGame()
+    {
+        // Find essential scene objects if they are not assigned.
+        // It's best to assign these via tags for reliability.
+        if (txtTimer == null)
+        {
+            // For this to work, your timer object in the scene must be named "txtTimer".
+            var timerObject = GameObject.Find("txtTimer");
+            if (timerObject != null)
+            {
+                txtTimer = timerObject.GetComponent<TextMeshProUGUI>();
+            }
+            Debug.LogWarning("[GameManager] txtTimer was not assigned. Found by name. Consider using a tag.");
+        }
+        if (defaultSpawnPoint == null)
+        {
+            // For this to work, your spawn point object must be tagged "DefaultSpawnPoint".
+            var spawnPointObject = GameObject.FindGameObjectWithTag("DefaultSpawnPoint");
+            if (spawnPointObject != null)
+            {
+                defaultSpawnPoint = spawnPointObject.transform;
+            }
+            Debug.LogWarning("[GameManager] defaultSpawnPoint was not assigned. Found by tag. Please assign the tag 'DefaultSpawnPoint'.");
+        }
+
         remainingSeconds = totalGameSeconds;
         hasEnded = false;
         UpdateGameState(InitialGameState);
 
+        StartCoroutine(SetupPlayerAnchorRoutine());
+
+        if (_autoSaveRoutine != null)
+        {
+            StopCoroutine(_autoSaveRoutine);
+        }
+        _autoSaveRoutine = StartCoroutine(AutoSaveRoutine());
+    }
+
+    private void CleanupGame()
+    {
+        if (_autoSaveRoutine != null)
+        {
+            StopCoroutine(_autoSaveRoutine);
+            _autoSaveRoutine = null;
+        }
+    }
+
+    private IEnumerator SetupPlayerAnchorRoutine()
+    {
         for (int i = 0; i < 60; i++)
         {
             if (TrySetupPlayerAnchor())
             {
-                break;
+                yield break; 
             }
             yield return null;
         }
+    }
 
+    private IEnumerator AutoSaveRoutine()
+    {
         while (true)
         {
             yield return new WaitForSeconds(30f);
-            saveLoadSystem.SaveDataToDisk();
+            if(saveLoadSystem != null)
+            {
+                saveLoadSystem.SaveDataToDisk();
+            }
         }
     }
 
@@ -113,7 +186,7 @@ public class GameManager : MonoBehaviour
         }
         if (remainingSeconds <= 0f)
         {
-            txtTimer.text = "00:00";
+            if (txtTimer != null) txtTimer.text = "00:00";
             EndGame(seekerWin: false);
             return;
         }
@@ -122,10 +195,21 @@ public class GameManager : MonoBehaviour
         {
             return;
         }
+        
+        // Debug.Log($"[GameManager] Total Players: {playerStateManager.GetTotalPlayerCount()}, Alive Players: {playerStateManager.GetAlivePlayerCount()}");
+
+        // Condition for single-player game end (player dies)
+        if (playerStateManager.GetTotalPlayerCount() == 1 && playerStateManager.GetAlivePlayerCount() == 0)
+        {
+            Debug.Log("[GameManager] Single-player game over: The player has died.");
+            EndGame(seekerWin: true); // Player (non-seeker) lost, so seekers win.
+            return;
+        }
 
         // Win Condition 1: All non-seekers are eliminated. Seekers win.
         if (playerStateManager.AreAllNonSeekersDead())
         {
+            Debug.Log("[GameManager] Condition 1 Met: All Non-Seekers Dead. Seekers Win.");
             EndGame(seekerWin: true);
             return;
         }
@@ -133,17 +217,19 @@ public class GameManager : MonoBehaviour
         // Win Condition 2: Only one player remains in a multiplayer match.
         if (playerStateManager.GetTotalPlayerCount() > 1 && playerStateManager.GetAlivePlayerCount() <= 1)
         {
+            Debug.Log("[GameManager] Condition 2 Met: Only one player remains.");
             var lastPlayer = playerStateManager.GetLastAlivePlayer();
             if (lastPlayer != null)
             {
-                // If last player is seeker, seekers win. Otherwise non-seekers win.
+                Debug.Log($"[GameManager] Last player alive is {(lastPlayer.IsSeeker ? "Seeker" : "Non-Seeker")}.");
                 EndGame(seekerWin: lastPlayer.IsSeeker);
             }
             else // 0 players are alive
             {
-                // If everyone is dead, check if the non-seekers were wiped out.
+                Debug.Log("[GameManager] 0 players alive. Checking AreAllNonSeekersDead for winner.");
                 EndGame(seekerWin: playerStateManager.AreAllNonSeekersDead());
             }
+            return;
         }
     }
 
@@ -159,22 +245,22 @@ public class GameManager : MonoBehaviour
         switch (currentGameState)
         {
             case GameState.Gameplay:
-                inputReader.EnableGameplayInput();
+                if (inputReader != null) inputReader.EnableGameplayInput();
                 Time.timeScale = 1;
                 break;
             case GameState.Menu:
-                inputReader.EnableUIInput();
+                if (inputReader != null) inputReader.EnableUIInput();
                 Time.timeScale = 1;
                 break;
             case GameState.Pause:
-                inputReader.EnableUIInput();
+                if (inputReader != null) inputReader.EnableUIInput();
                 Time.timeScale = 0;
                 break;
             case GameState.CutScene:
-                inputReader.DisableAllInput();
+                if (inputReader != null) inputReader.DisableAllInput();
                 break;
             case GameState.Ending:
-                inputReader.DisableAllInput();
+                if (inputReader != null) inputReader.DisableAllInput();
                 Time.timeScale = 1;
                 break;
         }
@@ -186,7 +272,7 @@ public class GameManager : MonoBehaviour
     {
         if (state)
         {
-            saveLoadSystem.SaveDataToDisk();
+            if(saveLoadSystem != null) saveLoadSystem.SaveDataToDisk();
         }
     }
 
@@ -204,7 +290,7 @@ public class GameManager : MonoBehaviour
         }
 
         player = FindLocalPlayer(players);
-        if (player == null)
+        if (player == null && players.Length > 0)
         {
             player = players[0];
         }
@@ -214,7 +300,7 @@ public class GameManager : MonoBehaviour
             return false;
         }
 
-        if (ShouldUseDefaultSpawn() && hasData == false)
+        if (ShouldUseDefaultSpawn() && hasData == false && defaultSpawnPoint != null)
         {
             player.transform.position = defaultSpawnPoint.position;
         }
@@ -231,6 +317,13 @@ public class GameManager : MonoBehaviour
         }
 
         hasEnded = true;
+        
+        if (_autoSaveRoutine != null)
+        {
+            StopCoroutine(_autoSaveRoutine);
+            _autoSaveRoutine = null;
+        }
+        
         UpdateGameState(GameState.Ending);
 
         bool localWin = seekerWin;
