@@ -60,10 +60,10 @@ MonoBehaviour:
   - maskColor: 1
     displayColor: {r: 0, g: 0.11100769, b: 1, a: 1}
   danceIcons:
-  - {fileID: 21300000, guid: eab93a9710fc4904ab627959afa1b294, type: 3}
-  - {fileID: 21300000, guid: b6c81a2d13e1933469d4998e48eb254f, type: 3}
-  - {fileID: 21300000, guid: dee8af2fccbcce84aaa37e23563e0a43, type: 3}
   - {fileID: 21300000, guid: 6b0df89b05c9811418c2155c9bc0eacd, type: 3}
+  - {fileID: 21300000, guid: dee8af2fccbcce84aaa37e23563e0a43, type: 3}
+  - {fileID: 21300000, guid: b6c81a2d13e1933469d4998e48eb254f, type: 3}
+  - {fileID: 21300000, guid: eab93a9710fc4904ab627959afa1b294, type: 3}
 --- !u!1 &1978499860840989393
 GameObject:
   m_ObjectHideFlags: 0
