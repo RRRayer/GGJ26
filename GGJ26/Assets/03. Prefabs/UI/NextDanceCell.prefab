@@ -51,14 +51,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   iconImage: {fileID: 2038308725916448307}
-  colorImage: {fileID: 5785354810217561670}
+  colorImage: {fileID: 1007855641289975606}
   colorMappings:
   - maskColor: 0
-    displayColor: {r: 1, g: 0, b: 0, a: 1}
+    displayColor: {r: 0.8117647, g: 0.53333336, b: 0.53333336, a: 1}
   - maskColor: 2
-    displayColor: {r: 0.075610876, g: 1, b: 0, a: 1}
+    displayColor: {r: 0.70980394, g: 0.81960785, b: 0.6431373, a: 1}
   - maskColor: 1
-    displayColor: {r: 0, g: 0.11100769, b: 1, a: 1}
+    displayColor: {r: 0.40392157, g: 0.7058824, b: 0.81960785, a: 1}
   danceIcons:
   - {fileID: 21300000, guid: 6b0df89b05c9811418c2155c9bc0eacd, type: 3}
   - {fileID: 21300000, guid: dee8af2fccbcce84aaa37e23563e0a43, type: 3}
