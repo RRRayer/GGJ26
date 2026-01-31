@@ -47,6 +47,7 @@ public class DiscoBall : MonoBehaviour
     [SerializeField] private Light globalLight;
     [SerializeField] private float yOffset = 5f;
     [SerializeField] private float transitionDuration = 1.5f;
+    [SerializeField] private GameObject textCanvas;
 
     private List<List<Light>> _logicalLightGroups = new List<List<Light>>();
     private bool _isDiscoActive = false;
@@ -128,6 +129,8 @@ public class DiscoBall : MonoBehaviour
                     renderer.gameObject.SetActive(false);
             }
         }
+        
+        textCanvas.SetActive(false);
     }
 
     private void OnEnable()
@@ -192,7 +195,7 @@ public class DiscoBall : MonoBehaviour
             RenderSettings.skybox = currentSkyboxMaterial;
         }
 
-
+        // Handle Global Light
         Sequence sequence = DOTween.Sequence();
         if (globalLight != null)
         {
@@ -201,6 +204,7 @@ public class DiscoBall : MonoBehaviour
         }
         sequence.Join(discoObject.transform.DOMoveY(_startPosition.y - yOffset, transitionDuration));
         
+        // Handle Curtain Objects
         if (curtainRenderers != null && curtainRenderers.Length > 0)
         {
             sequence.Join(DOTween.To(() => 0f, x =>
@@ -213,11 +217,15 @@ public class DiscoBall : MonoBehaviour
             }, 1f, transitionDuration));
         }
         
+        // Handle Sun Position(Directional Light)
         if (currentSkyboxMaterial != null && currentSkyboxMaterial.shader.name == "Skybox/Procedural")
         {
             sequence.Join(currentSkyboxMaterial.DOFloat(0f, "_SunSize", transitionDuration));
             sequence.Join(currentSkyboxMaterial.DOColor(discoSkyTint, "_SkyTint", transitionDuration));
         }
+        
+        // Handle Text "Dancing Time" Objet
+        textCanvas.SetActive(true);
         
         yield return sequence.WaitForCompletion();
 
@@ -283,6 +291,8 @@ public class DiscoBall : MonoBehaviour
                 Destroy(tempMaterialToDestroy); // Destroy the temporary material
             }
         });
+        
+        textCanvas.SetActive(false);
         
         yield return sequence.WaitForCompletion();
     }
