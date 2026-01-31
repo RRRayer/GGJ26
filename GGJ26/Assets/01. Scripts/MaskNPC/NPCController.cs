@@ -97,6 +97,10 @@ public class NPCController : NetworkBehaviour
     [Networked] private NetworkBool NetIsStopped { get; set; }
     [Networked] private NetworkBool NetIsSprinting { get; set; }
     [Networked] private int NetJumpCounter { get; set; }
+    [Networked] private float NetAnimSpeed { get; set; }
+    [Networked] private float NetAnimMotionSpeed { get; set; }
+    [Networked] private NetworkBool NetAnimGrounded { get; set; }
+    [Networked] private float NetVerticalVelocity { get; set; }
 
     private void Start()
     {
@@ -123,6 +127,14 @@ public class NPCController : NetworkBehaviour
         JumpAndGravity(deltaTime);
         GroundedCheck();
         Move(deltaTime);
+
+        if (Object != null && Object.HasStateAuthority)
+        {
+            NetAnimSpeed = animationBlend;
+            NetAnimMotionSpeed = moveDirection.magnitude;
+            NetAnimGrounded = Grounded;
+            NetVerticalVelocity = verticalVelocity;
+        }
     }
 
     private void UpdateDebugTimer(float deltaTime)
@@ -375,6 +387,31 @@ public class NPCController : NetworkBehaviour
         }
 
         shouldJump = false;
+    }
+
+    public override void Render()
+    {
+        if (animator == null)
+        {
+            animator = GetComponent<Animator>();
+        }
+        if (animator == null)
+        {
+            return;
+        }
+
+        if (debugNpc && Object.HasStateAuthority == false)
+        {
+            Debug.Log($"[NPC Anim][Client] speed={NetAnimSpeed:0.00} motion={NetAnimMotionSpeed:0.00} grounded={NetAnimGrounded} vVel={NetVerticalVelocity:0.00}", this);
+        }
+
+        animator.SetBool(animIDGrounded, NetAnimGrounded);
+        bool isJumping = NetAnimGrounded == false && NetVerticalVelocity > 0.1f;
+        bool isFreeFall = NetAnimGrounded == false && NetVerticalVelocity < -0.1f;
+        animator.SetBool(animIDJump, isJumping);
+        animator.SetBool(animIDFreeFall, isFreeFall);
+        animator.SetFloat(animIDSpeed, NetAnimSpeed);
+        animator.SetFloat(animIDMotionSpeed, NetAnimMotionSpeed);
     }
 
     private void OnFootstep(AnimationEvent animationEvent)
