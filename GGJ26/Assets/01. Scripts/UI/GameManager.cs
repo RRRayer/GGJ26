@@ -5,7 +5,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class GameManager : MonoBehaviour
+public class GameManager : NetworkBehaviour
 {
     public static GameManager Instance { get; private set; }
 
@@ -43,6 +43,10 @@ public class GameManager : MonoBehaviour
     private bool hasEnded;
     private bool isGroupDanceActive;
     private Coroutine _autoSaveRoutine;
+    private bool hasSpawned;
+
+    [Networked] private float NetRemainingSeconds { get; set; }
+    [Networked] private NetworkBool NetTimerRunning { get; set; }
 
     public bool IsGroupDanceActive => isGroupDanceActive;
 
@@ -67,6 +71,7 @@ public class GameManager : MonoBehaviour
         }
 
         Application.targetFrameRate = 60;
+        Application.runInBackground = true;
     }
 
     private void OnEnable()
@@ -125,6 +130,11 @@ public class GameManager : MonoBehaviour
         }
 
         remainingSeconds = totalGameSeconds;
+        if (hasSpawned && Object != null && Object.HasStateAuthority)
+        {
+            NetRemainingSeconds = totalGameSeconds;
+            NetTimerRunning = false;
+        }
         hasEnded = false;
         UpdateGameState(InitialGameState);
 
@@ -177,7 +187,15 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        remainingSeconds = Mathf.Max(0f, remainingSeconds - Time.deltaTime);
+        if (hasSpawned == false)
+        {
+            remainingSeconds = Mathf.Max(0f, remainingSeconds - Time.deltaTime);
+        }
+        else
+        {
+            remainingSeconds = NetRemainingSeconds;
+        }
+
         if (txtTimer != null)
         {
             int minutes = Mathf.FloorToInt(remainingSeconds / 60f);
@@ -339,6 +357,63 @@ public class GameManager : MonoBehaviour
         onGameResult?.RaiseEvent(result);
         Debug.Log("Game Ended. Seeker Win: " + seekerWin + ", Local Player Win: " + localWin);
         onGameEnded?.RaiseEvent();
+    }
+
+    public override void Spawned()
+    {
+        hasSpawned = true;
+        if (Object != null && Object.HasStateAuthority)
+        {
+            NetRemainingSeconds = totalGameSeconds;
+            NetTimerRunning = false;
+        }
+    }
+
+    public override void FixedUpdateNetwork()
+    {
+        if (Object == null || Object.HasStateAuthority == false)
+        {
+            return;
+        }
+
+        if (hasEnded || currentGameState != GameState.Gameplay)
+        {
+            return;
+        }
+
+        if (NetTimerRunning == false)
+        {
+            NetTimerRunning = AreAllPlayersPresent();
+            if (NetTimerRunning == false)
+            {
+                NetRemainingSeconds = totalGameSeconds;
+                return;
+            }
+        }
+
+        NetRemainingSeconds = Mathf.Max(0f, NetRemainingSeconds - Runner.DeltaTime);
+    }
+
+    private bool AreAllPlayersPresent()
+    {
+        if (Runner == null || Runner.IsRunning == false)
+        {
+            return false;
+        }
+
+        int maxPlayers = Runner.SessionInfo.IsValid ? Runner.SessionInfo.MaxPlayers : 0;
+        if (maxPlayers <= 1)
+        {
+            return true;
+        }
+
+        int activeCount = 0;
+        foreach (var player in Runner.ActivePlayers)
+        {
+            activeCount++;
+        }
+
+        return activeCount >= maxPlayers;
     }
 
     private static GameObject FindLocalPlayer(GameObject[] players)

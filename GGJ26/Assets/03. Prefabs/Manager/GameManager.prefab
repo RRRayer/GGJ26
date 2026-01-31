@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1495647940384630265}
   - component: {fileID: 5635472117089175894}
+  - component: {fileID: 8702735901867188176}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -51,9 +52,29 @@ MonoBehaviour:
   totalGameSeconds: 180
   playerStateManager: {fileID: 5780521679406519432, guid: 302fb3a2e00a8fc4d910545cbeb7ddb8, type: 3}
   statsManager: {fileID: 1025548861039293662, guid: 1bf158af3b757474db03a7dc4267d190, type: 3}
+  gameSceneName: GameScene
   onGameStateChanged: {fileID: 11400000, guid: 904b9174fc324c84ba436b022aa55dd5, type: 2}
   onGameEnded: {fileID: 11400000, guid: a7617ea9a6826b54fb2e7f0354afdbf9, type: 2}
   onGameResult: {fileID: 11400000, guid: 5a5f993efd703a642b33eede934483b7, type: 2}
   groupDanceActiveEvent: {fileID: 11400000, guid: 2f392a79a9c07cb4d84bbadf00f5947a, type: 2}
   txtTimer: {fileID: 0}
   InitialGameState: 1
+--- !u!114 &8702735901867188176
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7863296486997111603}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SortKey: 391089451
+  ObjectInterest: 1
+  Flags: 262145
+  NestedObjects: []
+  NetworkedBehaviours:
+  - {fileID: 5635472117089175894}
+  ForceRemoteRenderTimeframe: 0
