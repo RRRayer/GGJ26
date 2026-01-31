@@ -628,6 +628,10 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
+  maskEffectPrefab: {fileID: 3980204595993787155, guid: ecb4742ce3c6c2b4b9c4c7378eedd014, type: 3}
+  effectSpawnPoint: {fileID: 6566350019353034079}
+  stopDiscoEvent: {fileID: 11400000, guid: 2616eaedb6373ca47844971b5dada477, type: 2}
+  confirmStopDiscoEvent: {fileID: 11400000, guid: 719f821a96f371442bba8d125e2bcc94, type: 2}
   sfxEventChannel: {fileID: 11400000, guid: 06d6e7e2f1efcf34091297cc2951787b, type: 2}
   sfxConfiguration: {fileID: 11400000, guid: 854501da1c4d88b498813056f7cc098d, type: 2}
   maskChangeSfxCue: {fileID: 11400000, guid: 45a4ef5f671650440b6ef21782e00bd4, type: 2}
