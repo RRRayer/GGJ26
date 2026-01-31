@@ -621,8 +621,7 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
         {
             positions.AddRange(GenerateGridPositions(totalCount, random));
         }
-
-        if (positions.Count < totalCount)
+        else
         {
             int attempts = 0;
             int maxAttempts = totalCount * 200;
@@ -650,7 +649,7 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
 
         if (positions.Count < totalCount)
         {
-            Debug.LogWarning($"[FusionLauncher] Spawn positions 부족: {positions.Count}/{totalCount}. minSpawnDistance를 낮추거나 영역을 늘리세요.");
+            Debug.LogWarning($"[FusionLauncher] Spawn positions 부족: {positions.Count}/{totalCount}. SpawnArea 크기를 늘리거나 Grid Sampling을 켜세요.");
         }
 
         playerSpawnPositions.Clear();
@@ -776,23 +775,9 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
             candidates[swap] = temp;
         }
 
-        float minDistSqr = minSpawnDistance * minSpawnDistance;
         for (int i = 0; i < candidates.Count && results.Count < count; i++)
         {
-            Vector3 candidate = candidates[i];
-            bool ok = true;
-            for (int j = 0; j < results.Count; j++)
-            {
-                if ((results[j] - candidate).sqrMagnitude < minDistSqr)
-                {
-                    ok = false;
-                    break;
-                }
-            }
-            if (ok)
-            {
-                results.Add(candidate);
-            }
+            results.Add(candidates[i]);
         }
 
         return results;
