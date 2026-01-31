@@ -21,10 +21,14 @@ public class FusionThirdPersonMotor : NetworkBehaviour
     [SerializeField] private bool debugInput = false;
     [SerializeField] private bool updateAnimator = true;
 
-    [Networked] private float VerticalVelocity { get; set; }
-    [Networked] private float NetHorizontalSpeed { get; set; }
-    [Networked] private float NetInputMagnitude { get; set; }
-    [Networked] private NetworkBool NetGrounded { get; set; }
+    // --- FIX: REMOVED [Networked] attribute from physics-related properties ---
+    // These properties are now local to the State Authority.
+    // Animator values for other clients are calculated in Render() based on the NetworkTransform's interpolated movement.
+    private float verticalVelocity;
+    private float horizontalSpeed;
+    private float inputMagnitude;
+    
+    // This property is an infrequent event, so it's fine to keep it networked.
     [Networked] private NetworkBool IsDancing { get; set; }
 
     private CharacterController controller;
@@ -44,9 +48,12 @@ public class FusionThirdPersonMotor : NetworkBehaviour
     private float lastJumpPressedTime = -10f;
     private float lastGroundedTime = -10f;
     private Camera mainCamera;
-    private bool isGrounded;
+    private bool isGrounded; // This is now a simple local bool for the State Authority
     private PlayerRole role;
     private int lastDanceIndex = -1;
+    
+    // --- FIX: Added for local animation state calculation ---
+    private Vector3 lastRenderPosition;
 
     private void Awake()
     {
@@ -73,6 +80,13 @@ public class FusionThirdPersonMotor : NetworkBehaviour
             animIDStopDance = Animator.StringToHash("StopDance");
             animIDDanceIndex = Animator.StringToHash("DanceIndex");
         }
+    }
+    
+    // --- FIX: Added Spawned() to initialize render position ---
+    public override void Spawned()
+    {
+	    base.Spawned();
+	    lastRenderPosition = transform.position;
     }
 
     public void StartDance(int danceIndex)
@@ -161,7 +175,7 @@ public class FusionThirdPersonMotor : NetworkBehaviour
         }
 
         float speed = (lockMovement == false && input.Sprint) ? baseSprint : baseMove;
-        float inputMagnitude = move == Vector3.zero ? 0f : 1f;
+        this.inputMagnitude = move == Vector3.zero ? 0f : 1f; // FIX: store in local field
         float cameraYaw = mainCamera != null ? mainCamera.transform.eulerAngles.y : transform.eulerAngles.y;
         float targetRotation = transform.eulerAngles.y;
         if (move != Vector3.zero)
@@ -172,7 +186,7 @@ public class FusionThirdPersonMotor : NetworkBehaviour
         }
 
         Vector3 targetDirection = Quaternion.Euler(0f, targetRotation, 0f) * Vector3.forward;
-        Vector3 horizontal = targetDirection * speed * inputMagnitude;
+        Vector3 horizontal = targetDirection * speed * this.inputMagnitude; // FIX: use local field
 
         if (lockMovement == false && input.Jump)
         {
@@ -190,9 +204,9 @@ public class FusionThirdPersonMotor : NetworkBehaviour
         bool doJump = wantsJump && canCoyote;
 
         ApplyGravity(horizontal, doJump);
-        NetGrounded = isGrounded;
-        NetHorizontalSpeed = new Vector3(horizontal.x, 0f, horizontal.z).magnitude;
-        NetInputMagnitude = inputMagnitude;
+        
+        // --- FIX: REMOVED assignment to networked properties ---
+        this.horizontalSpeed = new Vector3(horizontal.x, 0f, horizontal.z).magnitude;
     }
 
     private void ApplyGravity(Vector3 horizontal, bool jump = false)
@@ -201,17 +215,17 @@ public class FusionThirdPersonMotor : NetworkBehaviour
         {
             if (jump)
             {
-                VerticalVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
+                verticalVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
             }
-            else if (VerticalVelocity < 0f)
+            else if (verticalVelocity < 0f)
             {
-                VerticalVelocity = -2f;
+                verticalVelocity = -2f;
             }
         }
 
-        VerticalVelocity += gravity * Runner.DeltaTime;
+        verticalVelocity += gravity * Runner.DeltaTime;
 
-        Vector3 motion = new Vector3(horizontal.x, VerticalVelocity, horizontal.z) * Runner.DeltaTime;
+        Vector3 motion = new Vector3(horizontal.x, verticalVelocity, horizontal.z) * Runner.DeltaTime;
         controller.Move(motion);
     }
 
@@ -225,6 +239,7 @@ public class FusionThirdPersonMotor : NetworkBehaviour
         return Physics.CheckSphere(spherePosition, groundedRadius, groundLayers, QueryTriggerInteraction.Ignore);
     }
 
+    // --- FIX: Replaced Render() with logic to derive animation state locally ---
     public override void Render()
     {
         if (hasAnimator == false || updateAnimator == false)
@@ -232,16 +247,28 @@ public class FusionThirdPersonMotor : NetworkBehaviour
             return;
         }
 
-        bool grounded = NetGrounded;
+        // On proxies, we derive animation state from the NetworkTransform's movement.
+        Vector3 currentVelocity = (transform.position - lastRenderPosition) / Time.deltaTime;
+        lastRenderPosition = transform.position;
+
+        float speed = new Vector3(currentVelocity.x, 0, currentVelocity.z).magnitude;
+        bool grounded = CheckGrounded(); // Use local ground check for visual accuracy
+        float vertVelocity = currentVelocity.y;
+
+        // On state authority, we can use the "real" simulated values for a slightly more responsive feel.
+        if (Object.HasStateAuthority)
+        {
+            speed = this.horizontalSpeed;
+            grounded = this.isGrounded;
+            vertVelocity = this.verticalVelocity;
+        }
+
         animator.SetBool(animIDGrounded, grounded);
-
-        bool isJumping = grounded == false && VerticalVelocity > 0.1f;
-        bool isFreeFall = grounded == false && VerticalVelocity < -0.1f;
-
+        bool isJumping = grounded == false && vertVelocity > 0.1f;
+        bool isFreeFall = grounded == false && vertVelocity < -0.1f;
         animator.SetBool(animIDJump, isJumping);
         animator.SetBool(animIDFreeFall, isFreeFall);
-
-        animator.SetFloat(animIDSpeed, NetHorizontalSpeed);
-        animator.SetFloat(animIDMotionSpeed, NetInputMagnitude);
+        animator.SetFloat(animIDSpeed, speed);
+        animator.SetFloat(animIDMotionSpeed, speed > 0.01f ? 1f : 0f);
     }
 }
