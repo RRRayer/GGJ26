@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 42957efe121d16a468ccc028d9a7e926
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 303054
+  packageName: Sample Dances Pack
+  packageVersion: 1.0
+  assetPath: Assets/Awesome Dog Mocap/Sample Dances/Animations/Second Line 4.controller
+  uploadId: 710208
