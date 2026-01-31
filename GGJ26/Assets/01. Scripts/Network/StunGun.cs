@@ -8,11 +8,11 @@ public class StunGun : NetworkBehaviour
     [SerializeField] private float range = 6f;
     [SerializeField] private float cooldownSeconds = 5f;
     [SerializeField] private LayerMask hitMask = -1;
-    [Header("Crosshair")]
-    [SerializeField] private bool showCrosshair = true;
-    [SerializeField] private int crosshairSize = 24;
-    [SerializeField] private int crosshairThickness = 2;
-    [SerializeField] private Color crosshairColor = Color.white;
+    // [Header("Crosshair")]
+    // [SerializeField] private bool showCrosshair = true;
+    // [SerializeField] private int crosshairSize = 24;
+    // [SerializeField] private int crosshairThickness = 2;
+    // [SerializeField] private Color crosshairColor = Color.white;
     [Header("Hit Effect")]
     [SerializeField] private GameObject hitEffectPrefab;
     [SerializeField] private float hitEffectLifetime = 1.5f;
@@ -26,6 +26,8 @@ public class StunGun : NetworkBehaviour
     [SerializeField] private AudioConfigurationSO sfxConfiguration;
     [SerializeField] private AudioCueSO shootSfxCue;
     [SerializeField] private AudioCueSO hitSfxCue;
+    [Header("UI Cooldown")]
+    private Image cooldownImage;
 
     private PlayerRole role;
     private float lastFireTime = -999f;
@@ -58,6 +60,17 @@ public class StunGun : NetworkBehaviour
         if (shootVfx == null && shootTransform != null)
         {
             shootVfx = shootTransform.GetComponent<UnityEngine.VFX.VisualEffect>();
+        }
+        
+        // Find the cooldown UI dynamically
+        GameObject cooldownUIObject = GameObject.FindGameObjectWithTag("AimCoolDown");
+        if (cooldownUIObject != null)
+        {
+            cooldownImage = cooldownUIObject.GetComponent<Image>();
+        }
+        else
+        {
+            Debug.LogWarning("StunGun: Could not find GameObject with tag 'AimCoolDown'.");
         }
     }
 
@@ -100,6 +113,7 @@ public class StunGun : NetworkBehaviour
         }
 
         lastFireTime = Time.time;
+        StartCoroutine(CooldownVisualCoroutine());
         RpcTriggerShoot();
         RpcPlayMuzzleVfx();
         PlaySfx(shootSfxCue, transform.position);
@@ -145,6 +159,26 @@ public class StunGun : NetworkBehaviour
         target.RpcPlayDeadAnimation();
         target.RpcRequestEliminate();
         target.ApplyEliminatedStateImmediate();
+    }
+
+    private System.Collections.IEnumerator CooldownVisualCoroutine()
+    {
+        if (cooldownImage == null)
+        {
+            yield break;
+        }
+
+        cooldownImage.fillAmount = 0f;
+        float timer = 0f;
+
+        while (timer < cooldownSeconds)
+        {
+            timer += Time.deltaTime;
+            cooldownImage.fillAmount = timer / cooldownSeconds;
+            yield return null;
+        }
+
+        cooldownImage.fillAmount = 1f;
     }
 
     private void SpawnHitEffect(Vector3 position, Vector3 normal)
@@ -221,11 +255,11 @@ public class StunGun : NetworkBehaviour
 
     private void UpdateCrosshair()
     {
-        if (showCrosshair == false)
-        {
-            SetCrosshairVisible(false);
-            return;
-        }
+        // if (showCrosshair == false)
+        // {
+        //     SetCrosshairVisible(false);
+        //     return;
+        // }
 
         if (role != null && role.HasRoleAssigned() == false)
         {
@@ -258,24 +292,24 @@ public class StunGun : NetworkBehaviour
             return;
         }
 
-        crosshairRoot = new GameObject("SeekerCrosshairUI");
-        var canvas = crosshairRoot.AddComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        crosshairRoot.AddComponent<CanvasScaler>();
-        crosshairRoot.AddComponent<GraphicRaycaster>();
+        // crosshairRoot = new GameObject("SeekerCrosshairUI");
+        // var canvas = crosshairRoot.AddComponent<Canvas>();
+        // canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        // crosshairRoot.AddComponent<CanvasScaler>();
+        // crosshairRoot.AddComponent<GraphicRaycaster>();
 
-        var imageObject = new GameObject("Crosshair");
-        imageObject.transform.SetParent(crosshairRoot.transform, false);
-        crosshairImage = imageObject.AddComponent<Image>();
+        // var imageObject = new GameObject("Crosshair");
+        // imageObject.transform.SetParent(crosshairRoot.transform, false);
+        // crosshairImage = imageObject.AddComponent<Image>();
 
-        var rect = crosshairImage.rectTransform;
-        rect.anchorMin = new Vector2(0.5f, 0.5f);
-        rect.anchorMax = new Vector2(0.5f, 0.5f);
-        rect.anchoredPosition = Vector2.zero;
-        rect.sizeDelta = new Vector2(crosshairSize, crosshairSize);
+        // var rect = crosshairImage.rectTransform;
+        // rect.anchorMin = new Vector2(0.5f, 0.5f);
+        // rect.anchorMax = new Vector2(0.5f, 0.5f);
+        // rect.anchoredPosition = Vector2.zero;
+        // rect.sizeDelta = new Vector2(crosshairSize, crosshairSize);
 
-        crosshairImage.sprite = CreateCrosshairSprite(crosshairSize, crosshairThickness, crosshairColor);
-        crosshairImage.raycastTarget = false;
+        // crosshairImage.sprite = CreateCrosshairSprite(crosshairSize, crosshairThickness, crosshairColor);
+        // crosshairImage.raycastTarget = false;
     }
 
     private Sprite CreateCrosshairSprite(int size, int thickness, Color color)

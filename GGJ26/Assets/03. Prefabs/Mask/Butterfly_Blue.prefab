@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 401003345071872972}
   m_Layer: 0
-  m_Name: Butterfly_Red
+  m_Name: Butterfly_Blue
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -96,7 +96,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: f4d5a54867124de4894d21c4a5aa10e4, type: 2}
+  - {fileID: 2100000, guid: 83eebe90abe925141a6edffa8a731ec4, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

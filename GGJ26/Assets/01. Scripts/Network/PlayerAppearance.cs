@@ -74,7 +74,7 @@ public class PlayerAppearance : MonoBehaviour
         }
 
         // 연출용 마스크 생성 및 애니메이션 재생, 그리고 끝날 때까지 대기
-        MaskEffect effectInstance = Instantiate(maskEffectPrefab, effectSpawnPoint.position, effectSpawnPoint.rotation);
+        MaskEffect effectInstance = Instantiate(maskEffectPrefab, effectSpawnPoint.position, effectSpawnPoint.rotation, effectSpawnPoint);
         await effectInstance.PlayEffectSequence();
         
         // 연출이 끝났으므로, 디스코볼이 종료되어도 좋다는 '확정' 신호를 보냄
