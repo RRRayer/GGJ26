@@ -58,6 +58,7 @@ public class UIResult : MonoBehaviour
 
         // Make mouse cursor visible and unlock its state
         Cursor.visible = true;
+        Debug.Log("Unlocking Cursor");
         Cursor.lockState = CursorLockMode.None;
     }
 

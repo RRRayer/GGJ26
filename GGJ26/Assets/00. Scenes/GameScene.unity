@@ -1889,6 +1889,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 6563334754708612028, guid: 84a3ea2ba79765b4d9c27f1c4d411437, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1227170224}
+    - targetCorrespondingSourceObject: {fileID: 6563334754708612028, guid: 84a3ea2ba79765b4d9c27f1c4d411437, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1227170229}
   m_SourcePrefab: {fileID: 100100000, guid: 84a3ea2ba79765b4d9c27f1c4d411437, type: 3}
 --- !u!114 &1227170221 stripped
 MonoBehaviour:
@@ -1936,6 +1939,20 @@ Canvas:
   m_CorrespondingSourceObject: {fileID: 6817340380951895054, guid: 84a3ea2ba79765b4d9c27f1c4d411437, type: 3}
   m_PrefabInstance: {fileID: 1227170220}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1227170229
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1227170223}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa4b40df15a33e947b6a205f82ca1eec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  seekerCanvas: {fileID: 238349070}
+  hiderCanvas: {fileID: 1772055395}
 --- !u!1 &1292967743
 GameObject:
   m_ObjectHideFlags: 0
@@ -3037,6 +3054,10 @@ PrefabInstance:
       propertyPath: txtTimer
       value: 
       objectReference: {fileID: 1227170221}
+    - target: {fileID: 5635472117089175894, guid: fe9646060860870468e10550124355b1, type: 3}
+      propertyPath: uiCanvasManager
+      value: 
+      objectReference: {fileID: 1227170229}
     - target: {fileID: 5635472117089175894, guid: fe9646060860870468e10550124355b1, type: 3}
       propertyPath: totalGameSeconds
       value: 180

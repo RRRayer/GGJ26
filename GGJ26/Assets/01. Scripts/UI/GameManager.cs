@@ -26,6 +26,7 @@ public class GameManager : NetworkBehaviour
     [SerializeField] private float totalGameSeconds = 180f;
     [SerializeField] private PlayerStateManager playerStateManager;
     [SerializeField] private StatsManager statsManager;
+    [SerializeField] private UICanvasManager uiCanvasManager;
     [SerializeField] private string gameSceneName = "GameScene";
 
     [Header("Broadcasting on")]
@@ -106,11 +107,8 @@ public class GameManager : NetworkBehaviour
 
     private void StartNewGame()
     {
-        // Find essential scene objects if they are not assigned.
-        // It's best to assign these via tags for reliability.
         if (txtTimer == null)
         {
-            // For this to work, your timer object in the scene must be named "txtTimer".
             var timerObject = GameObject.Find("txtTimer");
             if (timerObject != null)
             {
@@ -120,13 +118,17 @@ public class GameManager : NetworkBehaviour
         }
         if (defaultSpawnPoint == null)
         {
-            // For this to work, your spawn point object must be tagged "DefaultSpawnPoint".
             var spawnPointObject = GameObject.FindGameObjectWithTag("DefaultSpawnPoint");
             if (spawnPointObject != null)
             {
                 defaultSpawnPoint = spawnPointObject.transform;
             }
             Debug.LogWarning("[GameManager] defaultSpawnPoint was not assigned. Found by tag. Please assign the tag 'DefaultSpawnPoint'.");
+        }
+        if (uiCanvasManager == null)
+        {
+            uiCanvasManager = FindFirstObjectByType<UICanvasManager>();
+            Debug.LogWarning("[GameManager] uiCanvasManager was not assigned. Found by type.");
         }
 
         remainingSeconds = totalGameSeconds;
@@ -162,6 +164,21 @@ public class GameManager : NetworkBehaviour
         {
             if (TrySetupPlayerAnchor())
             {
+                // Once player is set up, determine their role and set the UI
+                if (playerStateManager != null && uiCanvasManager != null)
+                {
+                    if (playerStateManager.TryGetLocalPlayer(out var localState))
+                    {
+                        if (localState.IsSeeker)
+                        {
+                            uiCanvasManager.EnableSeekerCanvas();
+                        }
+                        else
+                        {
+                            uiCanvasManager.EnableHiderCanvas();
+                        }
+                    }
+                }
                 yield break; 
             }
             yield return null;
@@ -213,14 +230,12 @@ public class GameManager : NetworkBehaviour
         {
             return;
         }
-        
-        // Debug.Log($"[GameManager] Total Players: {playerStateManager.GetTotalPlayerCount()}, Alive Players: {playerStateManager.GetAlivePlayerCount()}");
 
         // Condition for single-player game end (player dies)
         if (playerStateManager.GetTotalPlayerCount() == 1 && playerStateManager.GetAlivePlayerCount() == 0)
         {
             Debug.Log("[GameManager] Single-player game over: The player has died.");
-            EndGame(seekerWin: true); // Player (non-seeker) lost, so seekers win.
+            EndGame(seekerWin: true);
             return;
         }
 

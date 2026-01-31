@@ -228,6 +228,14 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
         }
         spawnedPlayers[player] = obj;
 
+        // Update the PlayerStateManager with the correct role
+        if (playerStateManager != null)
+        {
+            var seeker = GetDeterministicSeeker();
+            bool isSeeker = player == seeker;
+            playerStateManager.RegisterPlayer(player.RawEncoded.ToString(), isSeeker);
+        }
+
         RegisterPlayerState(player);
     }
 
