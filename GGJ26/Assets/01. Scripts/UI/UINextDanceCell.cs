@@ -26,7 +26,7 @@ public class UINextDanceCell : MonoBehaviour
 
 
         
-        iconImage.sprite = danceIcons[danceInfo.DanceIndex];
+        iconImage.sprite = danceIcons[danceInfo.DanceIndex-1];
         iconImage.enabled = true;
     
 
