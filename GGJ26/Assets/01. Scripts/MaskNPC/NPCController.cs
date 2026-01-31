@@ -227,18 +227,18 @@ public class NPCController : NetworkBehaviour
         SetMovement(Vector3.zero, false);
 
         // Reset the other trigger to ensure a clean transition
-        _animator.ResetTrigger(_animIDStopDance);
+        animator.ResetTrigger(animIDStopDance);
 
-        _animator.SetInteger(_animIDDanceIndex, danceIndex);
-        _animator.SetTrigger(_animIDStartDance);
+        animator.SetInteger(animIDDanceIndex, danceIndex);
+        animator.SetTrigger(animIDStartDance);
     }
 
     public void StopDance()
     {
         // Reset the other trigger to ensure a clean transition
-        _animator.ResetTrigger(_animIDStartDance);
+        animator.ResetTrigger(animIDStartDance);
         
-        _animator.SetTrigger(_animIDStopDance);
+        animator.SetTrigger(animIDStopDance);
     }
 
     #endregion
