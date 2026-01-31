@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 2617457bb23590541af69bdf4d8448cc
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 303054
+  packageName: Sample Dances Pack
+  packageVersion: 1.0
+  assetPath: Assets/Awesome Dog Mocap/Sample Dances/Materials/Android Character/AndroidTexture_Diffuse.mat
+  uploadId: 710208

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: fe94b42df0bee994ab6b221bc987b3da
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 303054
+  packageName: Sample Dances Pack
+  packageVersion: 1.0
+  assetPath: Assets/Awesome Dog Mocap/Sample Dances/Animations/Baby Shark.controller
+  uploadId: 710208
