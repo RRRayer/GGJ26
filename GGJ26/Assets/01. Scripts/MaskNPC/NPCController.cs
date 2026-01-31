@@ -238,6 +238,15 @@ public class NPCController : NetworkBehaviour
     {
         SetMovement(Vector3.zero, false);
 
+        if (animator == null)
+        {
+            animator = GetComponent<Animator>();
+        }
+        if (animator == null)
+        {
+            return;
+        }
+
         // Reset the other trigger to ensure a clean transition
         animator.ResetTrigger(animIDStopDance);
 
@@ -247,6 +256,15 @@ public class NPCController : NetworkBehaviour
 
     public void StopDance()
     {
+        if (animator == null)
+        {
+            animator = GetComponent<Animator>();
+        }
+        if (animator == null)
+        {
+            return;
+        }
+
         // Reset the other trigger to ensure a clean transition
         animator.ResetTrigger(animIDStartDance);
         

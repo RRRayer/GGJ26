@@ -100,7 +100,7 @@ public class PlayerElimination : NetworkBehaviour
 
         if (cameraController != null)
         {
-            cameraController.enabled = true;
+            cameraController.enabled = !eliminated;
         }
 
         if (bodyRenderers != null)
