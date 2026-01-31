@@ -118,9 +118,32 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        if (playerStateManager != null && playerStateManager.AreAllNonSeekersDead())
+        if (playerStateManager == null)
+        {
+            return;
+        }
+
+        // Win Condition 1: All non-seekers are eliminated. Seekers win.
+        if (playerStateManager.AreAllNonSeekersDead())
         {
             EndGame(seekerWin: true);
+            return;
+        }
+        
+        // Win Condition 2: Only one player remains in a multiplayer match.
+        if (playerStateManager.GetTotalPlayerCount() > 1 && playerStateManager.GetAlivePlayerCount() <= 1)
+        {
+            var lastPlayer = playerStateManager.GetLastAlivePlayer();
+            if (lastPlayer != null)
+            {
+                // If last player is seeker, seekers win. Otherwise non-seekers win.
+                EndGame(seekerWin: lastPlayer.IsSeeker);
+            }
+            else // 0 players are alive
+            {
+                // If everyone is dead, check if the non-seekers were wiped out.
+                EndGame(seekerWin: playerStateManager.AreAllNonSeekersDead());
+            }
         }
     }
 
