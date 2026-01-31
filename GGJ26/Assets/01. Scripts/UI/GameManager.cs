@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Fusion;
+using TMPro;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
@@ -31,6 +32,8 @@ public class GameManager : MonoBehaviour
     [SerializeField] private GameResultEventChannelSO onGameResult;
     [SerializeField] private BoolEventChannelSO groupDanceActiveEvent;
 
+    [Header("UI")]
+    [SerializeField] private TextMeshProUGUI txtTimer;
     private GameObject player;
     private GameState currentGameState = GameState.None;
     private float remainingSeconds;
@@ -102,8 +105,15 @@ public class GameManager : MonoBehaviour
         }
 
         remainingSeconds = Mathf.Max(0f, remainingSeconds - Time.deltaTime);
+        if (txtTimer != null)
+        {
+            int minutes = Mathf.FloorToInt(remainingSeconds / 60f);
+            int seconds = Mathf.FloorToInt(remainingSeconds % 60f);
+            txtTimer.text = $"{minutes:00}:{seconds:00}";
+        }
         if (remainingSeconds <= 0f)
         {
+            txtTimer.text = "00:00";
             EndGame(seekerWin: false);
             return;
         }
