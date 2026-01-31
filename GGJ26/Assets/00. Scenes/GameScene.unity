@@ -2189,7 +2189,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5635472117089175894, guid: fe9646060860870468e10550124355b1, type: 3}
       propertyPath: totalGameSeconds
-      value: 5
+      value: 180
       objectReference: {fileID: 0}
     - target: {fileID: 5635472117089175894, guid: fe9646060860870468e10550124355b1, type: 3}
       propertyPath: defaultSpawnPoint

@@ -824,12 +824,22 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(spawnAreaTag))
+        GameObject spawnObject = null;
+        if (string.IsNullOrWhiteSpace(spawnAreaTag) == false)
         {
-            return;
+            spawnObject = GameObject.FindGameObjectWithTag(spawnAreaTag);
         }
 
-        var spawnObject = GameObject.FindGameObjectWithTag(spawnAreaTag);
+        if (spawnObject == null)
+        {
+            spawnObject = GameObject.FindGameObjectWithTag("SpawnArea");
+        }
+
+        if (spawnObject == null)
+        {
+            spawnObject = GameObject.FindGameObjectWithTag("SpawnPoint");
+        }
+
         if (spawnObject == null)
         {
             spawnObject = GameObject.Find("SpawnArea");
