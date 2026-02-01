@@ -115,7 +115,6 @@ public class StunGun : NetworkBehaviour
         lastFireTime = Time.time;
         StartCoroutine(CooldownVisualCoroutine());
         RpcTriggerShoot();
-        RpcPlayMuzzleVfx();
         PlaySfx(shootSfxCue, transform.position);
         BeginLookToCamera();
         Ray aimRay = new Ray(mainCamera.transform.position, mainCamera.transform.forward);
@@ -124,13 +123,18 @@ public class StunGun : NetworkBehaviour
 
         Vector3 fireOrigin = shootTransform != null ? shootTransform.position : aimRay.origin;
         Vector3 fireDirection = (aimPoint - fireOrigin).normalized;
+        Debug.Log($"fireDirection: {fireDirection}");
         Ray fireRay = new Ray(fireOrigin, fireDirection);
+        
+        RpcPlayMuzzleVfx(fireDirection);
+        
         bool hasHit = Physics.Raycast(fireRay, out RaycastHit hit, range, hitMask, QueryTriggerInteraction.Ignore);
         Vector3 hitPoint = hasHit ? hit.point : aimPoint;
         Vector3 hitNormal = hasHit ? hit.normal : -fireDirection;
 
-        SpawnHitEffect(hitPoint, hitNormal);
-        RpcPlayHitSfx(hitPoint);
+        
+        //SpawnHitEffect(hitPoint, hitNormal);
+        //RpcPlayHitSfx(hitPoint);
 
         if (hasHit == false)
         {
@@ -228,17 +232,20 @@ public class StunGun : NetworkBehaviour
     }
 
     [Rpc(RpcSources.InputAuthority, RpcTargets.All)]
-    private void RpcPlayMuzzleVfx()
+    private void RpcPlayMuzzleVfx(Vector3 shootDirection)
     {
         if (shootVfx == null && shootTransform != null)
         {
             shootVfx = shootTransform.GetComponent<UnityEngine.VFX.VisualEffect>();
         }
 
-        if (shootVfx != null)
-        {
-            shootVfx.Play();
-        }
+        Vector3 localDirection = shootVfx.transform.InverseTransformDirection(shootDirection);
+
+        shootVfx.SetVector3("MuzzlePosition", shootTransform.position); // 총구 위치 전달
+        shootVfx.SetVector3("ShootDirection", shootDirection); // 월드 방향 그대로 전달 (변환 X)
+        shootVfx.Play();
+    
+        Debug.Log($"World Dir: {shootDirection} -> Local Dir: {localDirection}");
     }
 
     [Rpc(RpcSources.InputAuthority, RpcTargets.All)]
