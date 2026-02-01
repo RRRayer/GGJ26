@@ -42,6 +42,11 @@ public class RedNPC : BaseNPC
             maskStateTimer = RandomRangePicker(RunDuration);
             agent.isStopped = false;
             SetNewWanderDestination();
+            if (NpcController != null)
+            {
+                NpcController.SetCommandStopped(false);
+                NpcController.SetCommandSprinting(true);
+            }
         }
         else
         {
@@ -49,6 +54,11 @@ public class RedNPC : BaseNPC
             maskStateTimer = RandomRangePicker(IdleDuration);
             agent.isStopped = true;
             agent.ResetPath(); // Ensure agent stops if starting with idling
+            if (NpcController != null)
+            {
+                NpcController.SetCommandStopped(true);
+                NpcController.SetCommandSprinting(false);
+            }
         }
     }
 
@@ -79,12 +89,20 @@ public class RedNPC : BaseNPC
             }
 
             // NPCController에 '달리기'를 명령합니다.
-            NpcController.SetMovement(agent.desiredVelocity.normalized, true);
+            if (NpcController != null)
+            {
+                NpcController.SetCommandStopped(false);
+                NpcController.SetCommandSprinting(true);
+            }
         }
         else // Idling 상태일 경우
         {
             // NPCController에 '정지'를 명령합니다.
-            NpcController.SetMovement(Vector3.zero, false);
+            if (NpcController != null)
+            {
+                NpcController.SetCommandStopped(true);
+                NpcController.SetCommandSprinting(false);
+            }
         }
     }
 
@@ -100,6 +118,11 @@ public class RedNPC : BaseNPC
             maskStateTimer = RandomRangePicker(IdleDuration);
             agent.isStopped = true;
             agent.ResetPath();
+            if (NpcController != null)
+            {
+                NpcController.SetCommandStopped(true);
+                NpcController.SetCommandSprinting(false);
+            }
         }
         else // Idling 상태였다면
         {
@@ -108,6 +131,11 @@ public class RedNPC : BaseNPC
             maskStateTimer = RandomRangePicker(RunDuration);
             agent.isStopped = false;
             SetNewWanderDestination();
+            if (NpcController != null)
+            {
+                NpcController.SetCommandStopped(false);
+                NpcController.SetCommandSprinting(true);
+            }
         }
     }
     

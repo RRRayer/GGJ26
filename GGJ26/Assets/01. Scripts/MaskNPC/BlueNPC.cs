@@ -71,7 +71,8 @@ public class BlueNPC : BaseNPC
 
         // 상태에 따라 뛰고 있는지(isSprinting) 여부를 결정해 NpcController에 전달합니다.
         bool isSprinting = (currentMaskState == MaskState.Running);
-        NpcController.SetMovement(agent.desiredVelocity.normalized, isSprinting);
+        NpcController.SetCommandStopped(false);
+        NpcController.SetCommandSprinting(isSprinting);
     }
 
     /// <summary>
@@ -85,10 +86,12 @@ public class BlueNPC : BaseNPC
         if (newState == MaskState.Running)
         {
             maskStateTimer = RandomRangePicker(RunDuration);
+            NpcController.SetCommandSprinting(true);
         }
         else // Walking
         {
             maskStateTimer = RandomRangePicker(WalkDuration);
+            NpcController.SetCommandSprinting(false);
         }
         // 새로운 상태가 되면 항상 새로운 목적지를 설정합니다.
         SetNewWanderDestination();
