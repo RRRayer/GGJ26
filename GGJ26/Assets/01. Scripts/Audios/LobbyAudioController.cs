@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class LobbyAudioController : MonoBehaviour
 {
@@ -9,30 +10,71 @@ public class LobbyAudioController : MonoBehaviour
     [SerializeField] private AudioCueSO lobbyBgmCue;
 
     private AudioManager audioManager;
-    private SoundEmitter lobbyEmitter;
+    private static SoundEmitter sharedLobbyEmitter;
+    private static AudioManager sharedAudioManager;
+
+    private void OnEnable()
+    {
+        SceneManager.activeSceneChanged += OnActiveSceneChanged;
+    }
 
     private void Start()
     {
         audioManager = AudioManager.Instance;
+        sharedAudioManager = audioManager;
         if (audioManager == null || lobbyBgmCue == null || musicConfiguration == null)
         {
             return;
         }
 
-        lobbyEmitter = audioManager.PlayLoopingMusic(lobbyBgmCue, musicConfiguration, transform.position);
+        if (sharedLobbyEmitter == null || sharedLobbyEmitter.IsPlaying() == false)
+        {
+            sharedLobbyEmitter = audioManager.PlayLoopingMusic(lobbyBgmCue, musicConfiguration, transform.position);
+        }
     }
 
     private void OnDisable()
+    {
+        SceneManager.activeSceneChanged -= OnActiveSceneChanged;
+    }
+
+    private void OnActiveSceneChanged(Scene current, Scene next)
     {
         if (audioManager == null)
         {
             audioManager = AudioManager.Instance;
         }
 
-        if (audioManager != null && lobbyEmitter != null)
+        if (audioManager == null || sharedLobbyEmitter == null)
         {
-            audioManager.StopEmitter(lobbyEmitter);
-            lobbyEmitter = null;
+            return;
         }
+
+        string nextPath = next.path;
+        if (nextPath.EndsWith("GameScene.unity", System.StringComparison.OrdinalIgnoreCase) ||
+            nextPath.EndsWith("Game.unity", System.StringComparison.OrdinalIgnoreCase))
+        {
+            StopSharedLobbyBgm();
+        }
+    }
+
+    public static void StopSharedLobbyBgm()
+    {
+        if (sharedLobbyEmitter == null)
+        {
+            return;
+        }
+
+        if (sharedAudioManager == null)
+        {
+            sharedAudioManager = AudioManager.Instance;
+        }
+
+        if (sharedAudioManager != null)
+        {
+            sharedAudioManager.StopEmitter(sharedLobbyEmitter);
+        }
+
+        sharedLobbyEmitter = null;
     }
 }

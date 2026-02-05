@@ -40,7 +40,9 @@ public class StunGun : NetworkBehaviour
     [SerializeField] private float rotateDuration = 0.05f;
 
     private static GameObject crosshairRoot;
-    private static Image crosshairImage;
+
+    private StunGunFx fx;
+    private StunGunCooldownUI cooldownUi;
 
     private void Awake()
     {
@@ -72,6 +74,18 @@ public class StunGun : NetworkBehaviour
         {
             Debug.LogWarning("StunGun: Could not find GameObject with tag 'AimCoolDown'.");
         }
+
+        fx = new StunGunFx(
+            hitEffectPrefab,
+            hitEffectLifetime,
+            shootTransform,
+            shootVfx,
+            fogEffectPrefab,
+            sfxEventChannel,
+            sfxConfiguration,
+            shootSfxCue,
+            hitSfxCue);
+        cooldownUi = new StunGunCooldownUI(this, cooldownImage, cooldownSeconds);
     }
 
     private void Update()
@@ -103,117 +117,23 @@ public class StunGun : NetworkBehaviour
             return;
         }
 
-        if (mainCamera == null)
+        if (EnsureCamera() == false)
         {
-            mainCamera = Camera.main;
-            if (mainCamera == null)
-            {
-                return;
-            }
+            return;
         }
 
         lastFireTime = Time.time;
-        StartCoroutine(CooldownVisualCoroutine());
+        cooldownUi.StartCooldown();
         RpcTriggerShoot();
-        PlaySfx(shootSfxCue, transform.position);
+        fx.PlayShootSfx(transform.position);
         BeginLookToCamera();
-        Ray aimRay = new Ray(mainCamera.transform.position, mainCamera.transform.forward);
-        bool aimHit = Physics.Raycast(aimRay, out RaycastHit aimHitInfo, range, hitMask, QueryTriggerInteraction.Ignore);
-        Vector3 aimPoint = aimHit ? aimHitInfo.point : aimRay.origin + aimRay.direction * range;
 
-        Vector3 fireOrigin = shootTransform != null ? shootTransform.position : aimRay.origin;
-        Vector3 fireDirection = (aimPoint - fireOrigin).normalized;
-        Debug.Log($"fireDirection: {fireDirection}");
-        Ray fireRay = new Ray(fireOrigin, fireDirection);
-        
-        RpcPlayMuzzleVfx(fireDirection);
-        
-        bool hasHit = Physics.Raycast(fireRay, out RaycastHit hit, range, hitMask, QueryTriggerInteraction.Ignore);
-        Vector3 hitPoint = hasHit ? hit.point : aimPoint;
-        Vector3 hitNormal = hasHit ? hit.normal : -fireDirection;
-
-        
-        //SpawnHitEffect(hitPoint, hitNormal);
-        //RpcPlayHitSfx(hitPoint);
-
-        if (hasHit == false)
+        if (TryBuildAimData(out var aimData) == false)
         {
             return;
         }
 
-        var target = hit.collider.GetComponentInParent<PlayerElimination>();
-        if (target == null)
-        {
-            var npc = hit.collider.GetComponentInParent<BaseNPC>();
-            if (npc != null)
-            {
-                var npcController = npc.GetComponent<NPCController>();
-                if (npcController != null)
-                {
-                    npcController.RpcTriggerDead();
-                }
-                RpcSpawnFogEffect(npc.transform.position, npc.transform.rotation);
-                var npcObject = npc.GetComponent<NetworkObject>();
-                if (npcObject != null && Runner != null && Runner.IsRunning)
-                {
-                    // Keep the NPC body visible; do not despawn.
-                }
-                else
-                {
-                    // Keep the NPC body visible; do not destroy.
-                }
-            }
-            return;
-        }
-
-        target.RpcRequestPlayDeadAnimation();
-        target.RpcRequestEliminate();
-        target.ApplyEliminatedStateImmediate();
-    }
-
-    private System.Collections.IEnumerator CooldownVisualCoroutine()
-    {
-        if (cooldownImage == null)
-        {
-            yield break;
-        }
-
-        cooldownImage.fillAmount = 0f;
-        float timer = 0f;
-
-        while (timer < cooldownSeconds)
-        {
-            timer += Time.deltaTime;
-            cooldownImage.fillAmount = timer / cooldownSeconds;
-            yield return null;
-        }
-
-        cooldownImage.fillAmount = 1f;
-    }
-
-    private void SpawnHitEffect(Vector3 position, Vector3 normal)
-    {
-        if (hitEffectPrefab == null)
-        {
-            return;
-        }
-
-        var rotation = normal.sqrMagnitude > 0.0001f ? Quaternion.LookRotation(normal) : Quaternion.identity;
-        var effect = Instantiate(hitEffectPrefab, position, rotation);
-        if (hitEffectLifetime > 0f)
-        {
-            Destroy(effect, hitEffectLifetime);
-        }
-    }
-
-    private void PlaySfx(AudioCueSO cue, Vector3 position)
-    {
-        if (sfxEventChannel == null || cue == null)
-        {
-            return;
-        }
-
-        sfxEventChannel.RaisePlayEvent(cue, sfxConfiguration, position);
+        RpcRequestFire(aimData.FireOrigin, aimData.FireDirection);
     }
 
     [Rpc(RpcSources.InputAuthority, RpcTargets.All)]
@@ -231,38 +151,22 @@ public class StunGun : NetworkBehaviour
         animator.SetTrigger(animIDShoot);
     }
 
-    [Rpc(RpcSources.InputAuthority, RpcTargets.All)]
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     private void RpcPlayMuzzleVfx(Vector3 shootDirection)
     {
-        if (shootVfx == null && shootTransform != null)
-        {
-            shootVfx = shootTransform.GetComponent<UnityEngine.VFX.VisualEffect>();
-        }
-
-        Vector3 localDirection = shootVfx.transform.InverseTransformDirection(shootDirection);
-
-        shootVfx.SetVector3("MuzzlePosition", shootTransform.position); // 총구 위치 전달
-        shootVfx.SetVector3("ShootDirection", shootDirection); // 월드 방향 그대로 전달 (변환 X)
-        shootVfx.Play();
-    
-        Debug.Log($"World Dir: {shootDirection} -> Local Dir: {localDirection}");
+        fx.PlayMuzzleVfx(shootDirection);
     }
 
-    [Rpc(RpcSources.InputAuthority, RpcTargets.All)]
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     private void RpcSpawnFogEffect(Vector3 position, Quaternion rotation)
     {
-        if (fogEffectPrefab == null)
-        {
-            return;
-        }
-
-        Instantiate(fogEffectPrefab, position, rotation);
+        fx.SpawnFogEffect(position, rotation);
     }
 
-    [Rpc(RpcSources.InputAuthority, RpcTargets.All)]
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     private void RpcPlayHitSfx(Vector3 position)
     {
-        PlaySfx(hitSfxCue, position);
+        fx.PlayHitSfx(position);
     }
 
 
@@ -356,7 +260,6 @@ public class StunGun : NetworkBehaviour
         {
             Destroy(crosshairRoot);
             crosshairRoot = null;
-            crosshairImage = null;
         }
     }
 
@@ -402,5 +305,226 @@ public class StunGun : NetworkBehaviour
         {
             rotateToCamera = false;
         }
+    }
+
+    private bool EnsureCamera()
+    {
+        if (mainCamera != null)
+        {
+            return true;
+        }
+
+        mainCamera = Camera.main;
+        return mainCamera != null;
+    }
+
+    private bool TryBuildAimData(out AimData data)
+    {
+        data = default;
+        Ray aimRay = new Ray(mainCamera.transform.position, mainCamera.transform.forward);
+        bool aimHit = Physics.Raycast(aimRay, out RaycastHit aimHitInfo, range, hitMask, QueryTriggerInteraction.Ignore);
+        Vector3 aimPoint = aimHit ? aimHitInfo.point : aimRay.origin + aimRay.direction * range;
+
+        Vector3 fireOrigin = shootTransform != null ? shootTransform.position : aimRay.origin;
+        Vector3 fireDirection = (aimPoint - fireOrigin).normalized;
+        Ray fireRay = new Ray(fireOrigin, fireDirection);
+
+        data = new AimData
+        {
+            AimRay = aimRay,
+            FireRay = fireRay,
+            AimPoint = aimPoint,
+            FireOrigin = fireOrigin,
+            FireDirection = fireDirection
+        };
+        return true;
+    }
+
+    private bool TryResolveHit(AimData data, out RaycastHit hitInfo)
+    {
+        return Physics.Raycast(data.FireRay, out hitInfo, range, hitMask, QueryTriggerInteraction.Ignore);
+    }
+
+    private void HandleHit(RaycastHit hit)
+    {
+        var target = hit.collider.GetComponentInParent<PlayerElimination>();
+        if (target == null)
+        {
+            var npc = hit.collider.GetComponentInParent<BaseNPC>();
+            if (npc != null)
+            {
+                var npcController = npc.GetComponent<NPCController>();
+                if (npcController != null)
+                {
+                    npcController.RpcTriggerDead();
+                }
+                RpcSpawnFogEffect(npc.transform.position, npc.transform.rotation);
+            }
+            return;
+        }
+
+        target.RpcRequestPlayDeadAnimation();
+        target.RpcRequestEliminate();
+        target.ApplyEliminatedStateImmediate();
+    }
+
+    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+    private void RpcRequestFire(Vector3 fireOrigin, Vector3 fireDirection)
+    {
+        RpcPlayMuzzleVfx(fireDirection);
+
+        var fireRay = new Ray(fireOrigin, fireDirection);
+        if (Physics.Raycast(fireRay, out RaycastHit hit, range, hitMask, QueryTriggerInteraction.Ignore) == false)
+        {
+            return;
+        }
+
+        RpcPlayHitSfx(hit.point);
+        HandleHit(hit);
+    }
+
+    private struct AimData
+    {
+        public Ray AimRay;
+        public Ray FireRay;
+        public Vector3 AimPoint;
+        public Vector3 FireOrigin;
+        public Vector3 FireDirection;
+    }
+}
+
+internal sealed class StunGunFx
+{
+    private readonly GameObject hitEffectPrefab;
+    private readonly float hitEffectLifetime;
+    private readonly Transform shootTransform;
+    private UnityEngine.VFX.VisualEffect shootVfx;
+    private readonly GameObject fogEffectPrefab;
+    private readonly AudioCueEventChannelSO sfxEventChannel;
+    private readonly AudioConfigurationSO sfxConfiguration;
+    private readonly AudioCueSO shootSfxCue;
+    private readonly AudioCueSO hitSfxCue;
+
+    public StunGunFx(
+        GameObject hitEffectPrefab,
+        float hitEffectLifetime,
+        Transform shootTransform,
+        UnityEngine.VFX.VisualEffect shootVfx,
+        GameObject fogEffectPrefab,
+        AudioCueEventChannelSO sfxEventChannel,
+        AudioConfigurationSO sfxConfiguration,
+        AudioCueSO shootSfxCue,
+        AudioCueSO hitSfxCue)
+    {
+        this.hitEffectPrefab = hitEffectPrefab;
+        this.hitEffectLifetime = hitEffectLifetime;
+        this.shootTransform = shootTransform;
+        this.shootVfx = shootVfx;
+        this.fogEffectPrefab = fogEffectPrefab;
+        this.sfxEventChannel = sfxEventChannel;
+        this.sfxConfiguration = sfxConfiguration;
+        this.shootSfxCue = shootSfxCue;
+        this.hitSfxCue = hitSfxCue;
+    }
+
+    public void PlayShootSfx(Vector3 position)
+    {
+        PlaySfx(shootSfxCue, position);
+    }
+
+    public void PlayHitSfx(Vector3 position)
+    {
+        PlaySfx(hitSfxCue, position);
+    }
+
+    public void PlayMuzzleVfx(Vector3 shootDirection)
+    {
+        if (shootVfx == null && shootTransform != null)
+        {
+            shootVfx = shootTransform.GetComponent<UnityEngine.VFX.VisualEffect>();
+        }
+
+        if (shootVfx == null || shootTransform == null)
+        {
+            return;
+        }
+
+        shootVfx.SetVector3("MuzzlePosition", shootTransform.position);
+        shootVfx.SetVector3("ShootDirection", shootDirection);
+        shootVfx.Play();
+    }
+
+    public void SpawnFogEffect(Vector3 position, Quaternion rotation)
+    {
+        if (fogEffectPrefab == null)
+        {
+            return;
+        }
+
+        Object.Instantiate(fogEffectPrefab, position, rotation);
+    }
+
+    public void SpawnHitEffect(Vector3 position, Vector3 normal)
+    {
+        if (hitEffectPrefab == null)
+        {
+            return;
+        }
+
+        var rotation = normal.sqrMagnitude > 0.0001f ? Quaternion.LookRotation(normal) : Quaternion.identity;
+        var effect = Object.Instantiate(hitEffectPrefab, position, rotation);
+        if (hitEffectLifetime > 0f)
+        {
+            Object.Destroy(effect, hitEffectLifetime);
+        }
+    }
+
+    private void PlaySfx(AudioCueSO cue, Vector3 position)
+    {
+        if (sfxEventChannel == null || cue == null)
+        {
+            return;
+        }
+
+        sfxEventChannel.RaisePlayEvent(cue, sfxConfiguration, position);
+    }
+}
+
+internal sealed class StunGunCooldownUI
+{
+    private readonly MonoBehaviour owner;
+    private readonly Image cooldownImage;
+    private readonly float cooldownSeconds;
+
+    public StunGunCooldownUI(MonoBehaviour owner, Image cooldownImage, float cooldownSeconds)
+    {
+        this.owner = owner;
+        this.cooldownImage = cooldownImage;
+        this.cooldownSeconds = cooldownSeconds;
+    }
+
+    public void StartCooldown()
+    {
+        if (owner == null || cooldownImage == null)
+        {
+            return;
+        }
+
+        owner.StartCoroutine(CooldownRoutine());
+    }
+
+    private System.Collections.IEnumerator CooldownRoutine()
+    {
+        cooldownImage.fillAmount = 0f;
+        float timer = 0f;
+
+        while (timer < cooldownSeconds)
+        {
+            timer += Time.deltaTime;
+            cooldownImage.fillAmount = timer / cooldownSeconds;
+            yield return null;
+        }
+
+        cooldownImage.fillAmount = 1f;
     }
 }

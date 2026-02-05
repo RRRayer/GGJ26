@@ -1,0 +1,257 @@
+using System;
+using System.Threading.Tasks;
+using Fusion;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+public class FusionSessionFlow : MonoBehaviour
+{
+    [Header("Session")]
+    [SerializeField] private string gameScenePath = "Assets/00. Scenes/GameScene.unity";
+    [SerializeField] private string waitingRoomScenePath = "Assets/00. Scenes/WaitingRoom.unity";
+
+    public event Action<bool> MatchmakingStateChanged;
+
+    public NetworkRunner Runner => runner;
+    public bool IsMatchmaking => isMatchmaking;
+    public bool IsHost => runner != null && runner.IsRunning && runner.IsSharedModeMasterClient;
+    public bool IsInRoom => runner != null && runner.IsRunning;
+
+    private NetworkRunner runner;
+    private GameObject runnerObject;
+    private bool isStarting;
+    private bool isMatchmaking;
+    private bool cancelRequested;
+    private TaskCompletionSource<bool> shutdownCompletion;
+
+    private void Awake()
+    {
+        var existingRunner = GetComponent<NetworkRunner>();
+        if (existingRunner != null)
+        {
+            Destroy(existingRunner);
+        }
+
+        NormalizeScenePaths();
+        BindExistingRunner();
+        EnsureRunner();
+    }
+
+    private void BindExistingRunner()
+    {
+        var existing = FindFirstObjectByType<NetworkRunner>();
+        if (existing == null || existing.IsRunning == false)
+        {
+            return;
+        }
+
+        runner = existing;
+        runnerObject = existing.gameObject;
+        if (runnerObject.GetComponent<NetworkSceneManagerDefault>() == null)
+        {
+            runnerObject.AddComponent<NetworkSceneManagerDefault>();
+        }
+    }
+
+    private void NormalizeScenePaths()
+    {
+        if (string.IsNullOrWhiteSpace(gameScenePath) || gameScenePath.EndsWith("Game.unity", StringComparison.OrdinalIgnoreCase))
+        {
+            gameScenePath = "Assets/00. Scenes/GameScene.unity";
+        }
+
+        if (string.IsNullOrWhiteSpace(waitingRoomScenePath))
+        {
+            waitingRoomScenePath = "Assets/00. Scenes/WaitingRoom.unity";
+        }
+    }
+
+    public async Task<bool> StartSessionAsync(string roomName, int maxPlayers)
+    {
+        if (isStarting)
+        {
+            return false;
+        }
+
+        isStarting = true;
+        cancelRequested = false;
+        SetMatchmakingState(true);
+
+        if (runner != null && runner.IsRunning)
+        {
+            await RequestShutdownAsync();
+        }
+
+        RecreateRunner();
+
+        var sceneManager = GetComponent<NetworkSceneManagerDefault>();
+        var sceneIndex = SceneManager.GetActiveScene().buildIndex;
+
+        var startArgs = new StartGameArgs
+        {
+            GameMode = GameMode.Shared,
+            SessionName = roomName,
+            PlayerCount = maxPlayers,
+            Scene = SceneRef.FromIndex(sceneIndex),
+            SceneManager = sceneManager
+        };
+
+        var result = await runner.StartGame(startArgs);
+        if (result.Ok == false)
+        {
+            isStarting = false;
+            SetMatchmakingState(false);
+            if (result.ShutdownReason != ShutdownReason.OperationCanceled)
+            {
+                Debug.LogError($"Fusion StartGame failed: {result.ShutdownReason}");
+            }
+            return false;
+        }
+
+        if (cancelRequested)
+        {
+            _ = runner.Shutdown();
+            isStarting = false;
+            SetMatchmakingState(false);
+            return false;
+        }
+
+        if (IsLobbyScene() && IsHost)
+        {
+            var waitingSceneIndex = SceneUtility.GetBuildIndexByScenePath(waitingRoomScenePath);
+            if (waitingSceneIndex < 0)
+            {
+                Debug.LogError($"Waiting room scene not in Build Settings: {waitingRoomScenePath}");
+                return false;
+            }
+
+            _ = runner.LoadScene(SceneRef.FromIndex(waitingSceneIndex));
+        }
+
+        return true;
+    }
+
+    public void StartGameScene()
+    {
+        if (runner == null || runner.IsRunning == false)
+        {
+            return;
+        }
+
+        if (runner.IsSharedModeMasterClient == false)
+        {
+            return;
+        }
+
+        var gameSceneIndex = SceneUtility.GetBuildIndexByScenePath(gameScenePath);
+        if (gameSceneIndex < 0)
+        {
+            Debug.LogError($"Game scene not in Build Settings: {gameScenePath}");
+            return;
+        }
+
+        _ = runner.LoadScene(SceneRef.FromIndex(gameSceneIndex));
+    }
+
+    public async void ShutdownSession()
+    {
+        await RequestShutdownAsync();
+    }
+
+    public void CancelMatchmaking()
+    {
+        if (isMatchmaking == false)
+        {
+            return;
+        }
+
+        cancelRequested = true;
+        isStarting = false;
+        if (runner != null && runner.IsRunning)
+        {
+            _ = RequestShutdownAsync();
+        }
+        else
+        {
+            cancelRequested = false;
+        }
+
+        SetMatchmakingState(false);
+    }
+
+    private async Task RequestShutdownAsync()
+    {
+        if (runner == null || runner.IsRunning == false)
+        {
+            return;
+        }
+
+        shutdownCompletion ??= new TaskCompletionSource<bool>();
+        _ = runner.Shutdown();
+
+        await shutdownCompletion.Task;
+        shutdownCompletion = null;
+
+        if (runnerObject != null)
+        {
+            Destroy(runnerObject);
+            runnerObject = null;
+        }
+
+        runner = null;
+    }
+
+    private void EnsureRunner()
+    {
+        if (runner != null)
+        {
+            return;
+        }
+
+        runnerObject = new GameObject("FusionRunner");
+        DontDestroyOnLoad(runnerObject);
+        runner = runnerObject.AddComponent<NetworkRunner>();
+        runner.ProvideInput = true;
+        runnerObject.AddComponent<NetworkSceneManagerDefault>();
+    }
+
+    private void RecreateRunner()
+    {
+        if (runnerObject != null)
+        {
+            Destroy(runnerObject);
+            runnerObject = null;
+        }
+
+        runner = null;
+        EnsureRunner();
+    }
+
+    private void SetMatchmakingState(bool value)
+    {
+        if (isMatchmaking == value)
+        {
+            return;
+        }
+
+        isMatchmaking = value;
+        MatchmakingStateChanged?.Invoke(isMatchmaking);
+    }
+
+    private bool IsLobbyScene()
+    {
+        var activePath = SceneManager.GetActiveScene().path;
+        return string.Equals(activePath, gameScenePath, StringComparison.OrdinalIgnoreCase) == false;
+    }
+
+    public void NotifyShutdownComplete()
+    {
+        if (shutdownCompletion != null)
+        {
+            shutdownCompletion.TrySetResult(true);
+        }
+        isStarting = false;
+        cancelRequested = false;
+        SetMatchmakingState(false);
+    }
+}

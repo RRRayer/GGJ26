@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using Fusion;
 using TMPro;
 using UnityEngine;
@@ -11,8 +10,8 @@ public class GameManager : NetworkBehaviour
 
     public GameState CurrentGameState
     {
-        get => currentGameState;
-        set => currentGameState = value;
+        get => gameStateController != null ? gameStateController.CurrentState : currentGameState;
+        set => UpdateGameState(value);
     }
 
     private bool hasData = false;
@@ -28,6 +27,9 @@ public class GameManager : NetworkBehaviour
     [SerializeField] private StatsManager statsManager;
     [SerializeField] private UICanvasManager uiCanvasManager;
     [SerializeField] private string gameSceneName = "GameScene";
+    [SerializeField] private GameStateController gameStateController;
+    [SerializeField] private GameTimerController timerController;
+    [SerializeField] private GameResultController resultController;
 
     [Header("Broadcasting on")]
     [SerializeField] private GameStateEventChannelSO onGameStateChanged;
@@ -37,18 +39,12 @@ public class GameManager : NetworkBehaviour
 
     [Header("UI")]
     [SerializeField] private TextMeshProUGUI txtTimer;
-    
+
     private GameObject player;
     private GameState currentGameState = GameState.None;
-    private float remainingSeconds;
-    private bool hasEnded;
     private bool isGroupDanceActive;
     private Coroutine _autoSaveRoutine;
     private bool hasSpawned;
-
-    [Networked] private float NetRemainingSeconds { get; set; }
-    [Networked] private NetworkBool NetTimerRunning { get; set; }
-    [Networked] private double NetStartTime { get; set; }
 
     public bool IsGroupDanceActive => isGroupDanceActive;
 
@@ -67,6 +63,51 @@ public class GameManager : NetworkBehaviour
         if (saveLoadSystem != null)
         {
             hasData = saveLoadSystem.LoadSaveDataFromDisk();
+        }
+
+        if (gameStateController == null)
+        {
+            gameStateController = GetComponent<GameStateController>();
+        }
+
+        if (gameStateController == null)
+        {
+            gameStateController = gameObject.AddComponent<GameStateController>();
+        }
+
+        if (timerController == null)
+        {
+            timerController = GetComponent<GameTimerController>();
+        }
+
+        if (timerController == null)
+        {
+            timerController = gameObject.AddComponent<GameTimerController>();
+        }
+
+        if (resultController == null)
+        {
+            resultController = GetComponent<GameResultController>();
+        }
+
+        if (resultController == null)
+        {
+            resultController = gameObject.AddComponent<GameResultController>();
+        }
+
+        if (gameStateController != null)
+        {
+            gameStateController.Configure(inputReader, onGameStateChanged);
+        }
+
+        if (timerController != null)
+        {
+            timerController.Configure(totalGameSeconds, txtTimer);
+        }
+
+        if (resultController != null)
+        {
+            resultController.Configure(statsManager, playerStateManager, gameStateController, onGameResult, onGameEnded);
         }
 
         Application.targetFrameRate = 60;
@@ -100,7 +141,7 @@ public class GameManager : NetworkBehaviour
             playerStateManager.OnAllNonSeekersDead -= HandleAllNonSeekersDead;
         }
     }
-    
+
     private void OnPlayerStateChanged(PlayerState updatedState)
     {
         Debug.Log($"[GameManager] OnPlayerStateChanged received for PlayerId: {updatedState.PlayerId}, IsSeeker: {updatedState.IsSeeker}.");
@@ -163,6 +204,13 @@ public class GameManager : NetworkBehaviour
             }
             Debug.LogWarning("[GameManager] txtTimer was not assigned. Found by name. Consider using a tag.");
         }
+
+        if (timerController != null)
+        {
+            timerController.InitializeTimerText();
+            timerController.ResetTimer(hasSpawned);
+        }
+
         if (defaultSpawnPoint == null)
         {
             var spawnPointObject = GameObject.FindGameObjectWithTag("DefaultSpawnPoint");
@@ -179,14 +227,10 @@ public class GameManager : NetworkBehaviour
         }
 
         LockCursorForGameplay();
-        remainingSeconds = totalGameSeconds;
-        if (hasSpawned && Object != null && Object.HasStateAuthority)
+        if (resultController != null)
         {
-            NetRemainingSeconds = totalGameSeconds;
-            NetTimerRunning = false;
-            NetStartTime = Runner != null ? Runner.SimulationTime : 0d;
+            resultController.ResetResult();
         }
-        hasEnded = false;
         UpdateGameState(InitialGameState);
 
         StartCoroutine(SetupPlayerAnchorRoutine());
@@ -225,7 +269,7 @@ public class GameManager : NetworkBehaviour
         {
             if (TrySetupPlayerAnchor())
             {
-                yield break; 
+                yield break;
             }
             yield return null;
         }
@@ -236,7 +280,7 @@ public class GameManager : NetworkBehaviour
         while (true)
         {
             yield return new WaitForSeconds(30f);
-            if(saveLoadSystem != null)
+            if (saveLoadSystem != null)
             {
                 saveLoadSystem.SaveDataToDisk();
             }
@@ -245,35 +289,27 @@ public class GameManager : NetworkBehaviour
 
     private void Update()
     {
-        if (currentGameState == GameState.Ending)
+        if (gameStateController != null && gameStateController.IsEnding())
         {
             UnlockCursorForResult();
             return;
         }
 
-        if (hasEnded || currentGameState != GameState.Gameplay)
+        if (resultController != null && resultController.HasEnded)
         {
             return;
         }
 
-        remainingSeconds = hasSpawned ? NetRemainingSeconds : totalGameSeconds;
-
-        if (Time.frameCount % 120 == 0)
+        if (gameStateController != null && gameStateController.IsGameplay() == false)
         {
-            Debug.Log($"[Timer] spawned={hasSpawned} stateAuth={(Object != null && Object.HasStateAuthority)} state={currentGameState} runner={(Runner != null && Runner.IsRunning)} remaining={remainingSeconds:0.00}");
-        }
-
-        if (txtTimer != null)
-        {
-            int minutes = Mathf.FloorToInt(remainingSeconds / 60f);
-            int seconds = Mathf.FloorToInt(remainingSeconds % 60f);
-            txtTimer.text = $"{minutes:00}:{seconds:00}";
-        }
-        if (remainingSeconds <= 0f)
-        {
-            if (txtTimer != null) txtTimer.text = "00:00";
-            EndGame(seekerWin: false);
             return;
+        }
+
+        if (timerController != null)
+        {
+            timerController.IsGameplayActive = gameStateController == null || gameStateController.IsGameplay();
+            timerController.HasEnded = resultController != null && resultController.HasEnded;
+            timerController.TickTimerUI();
         }
 
         if (playerStateManager == null)
@@ -285,81 +321,25 @@ public class GameManager : NetworkBehaviour
             }
         }
 
-        // Condition for single-player game end (player dies)
-        if (playerStateManager.GetTotalPlayerCount() == 1 && playerStateManager.GetAlivePlayerCount() == 0)
+        if (resultController != null && timerController != null)
         {
-            Debug.Log("[GameManager] Single-player game over: The player has died.");
-            EndGame(seekerWin: true);
-            return;
-        }
-
-        // Win Condition 1: All non-seekers are eliminated. Seekers win.
-        if (playerStateManager.AreAllNonSeekersDead())
-        {
-            Debug.Log("[GameManager] Condition 1 Met: All Non-Seekers Dead. Seekers Win.");
-            EndGame(seekerWin: true);
-            return;
-        }
-        
-        // Win Condition 2: Only one player remains in a multiplayer match.
-        if (playerStateManager.GetTotalPlayerCount() > 1 && playerStateManager.GetAlivePlayerCount() <= 1)
-        {
-            Debug.Log("[GameManager] Condition 2 Met: Only one player remains.");
-            var lastPlayer = playerStateManager.GetLastAlivePlayer();
-            if (lastPlayer != null)
-            {
-                Debug.Log($"[GameManager] Last player alive is {(lastPlayer.IsSeeker ? "Seeker" : "Non-Seeker")}.");
-                EndGame(seekerWin: lastPlayer.IsSeeker);
-            }
-            else // 0 players are alive
-            {
-                Debug.Log("[GameManager] 0 players alive. Checking AreAllNonSeekersDead for winner.");
-                EndGame(seekerWin: playerStateManager.AreAllNonSeekersDead());
-            }
-            return;
+            resultController.TryResolveWinConditions(timerController.RemainingSeconds);
         }
     }
 
     public void UpdateGameState(GameState newGameState)
     {
-        if (newGameState == CurrentGameState)
+        if (gameStateController != null)
         {
-            return;
+            gameStateController.SetState(newGameState);
         }
-
-        currentGameState = newGameState;
-
-        switch (currentGameState)
-        {
-            case GameState.Gameplay:
-                if (inputReader != null) inputReader.EnableGameplayInput();
-                Time.timeScale = 1;
-                break;
-            case GameState.Menu:
-                if (inputReader != null) inputReader.EnableUIInput();
-                Time.timeScale = 1;
-                break;
-            case GameState.Pause:
-                if (inputReader != null) inputReader.EnableUIInput();
-                Time.timeScale = 0;
-                break;
-            case GameState.CutScene:
-                if (inputReader != null) inputReader.DisableAllInput();
-                break;
-            case GameState.Ending:
-                if (inputReader != null) inputReader.DisableAllInput();
-                Time.timeScale = 1;
-                break;
-        }
-
-        onGameStateChanged?.RaiseEvent(currentGameState);
     }
 
     private void OnApplicationPause(bool state)
     {
         if (state)
         {
-            if(saveLoadSystem != null) saveLoadSystem.SaveDataToDisk();
+            if (saveLoadSystem != null) saveLoadSystem.SaveDataToDisk();
         }
     }
 
@@ -400,11 +380,12 @@ public class GameManager : NetworkBehaviour
     {
         if (Object != null && Object.HasStateAuthority)
         {
+            float remainingSeconds = timerController != null ? timerController.RemainingSeconds : 0f;
             RpcEndGame(seekerWin, remainingSeconds);
             return;
         }
 
-        EndGameLocal(seekerWin, remainingSeconds);
+        EndGameLocal(seekerWin, timerController != null ? timerController.RemainingSeconds : 0f);
     }
 
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
@@ -415,62 +396,18 @@ public class GameManager : NetworkBehaviour
 
     private void EndGameLocal(bool seekerWin, float remaining)
     {
-        if (hasEnded)
-        {
-            return;
-        }
-
-        hasEnded = true;
-        
         if (_autoSaveRoutine != null)
         {
             StopCoroutine(_autoSaveRoutine);
             _autoSaveRoutine = null;
         }
-        
-        UpdateGameState(GameState.Ending);
+
+        if (resultController != null)
+        {
+            resultController.EndGame(seekerWin, remaining);
+        }
+
         UnlockCursorForResult();
-
-        bool localWin = seekerWin;
-        if (playerStateManager != null && playerStateManager.TryGetLocalPlayer(out var localState))
-        {
-            localWin = localState.IsSeeker == seekerWin;
-        }
-        else
-        {
-            var localRole = FindLocalPlayerRole();
-            if (localRole != null)
-            {
-                localWin = localRole.IsSeeker == seekerWin;
-            }
-        }
-
-        float avgReaction = statsManager != null ? statsManager.GetAverageReactionMs() : 0f;
-        List<MaskColor> history = statsManager != null ? statsManager.GetMaskHistory() : new List<MaskColor>();
-        var result = new GameResultData(seekerWin, localWin, remaining, avgReaction, history);
-
-        onGameResult?.RaiseEvent(result);
-        Debug.Log("Game Ended. Seeker Win: " + seekerWin + ", Local Player Win: " + localWin);
-        onGameEnded?.RaiseEvent();
-    }
-
-    private PlayerRole FindLocalPlayerRole()
-    {
-        var roles = FindObjectsByType<PlayerRole>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
-        foreach (var role in roles)
-        {
-            if (role == null)
-            {
-                continue;
-            }
-
-            if (role.Object != null && role.Object.HasInputAuthority)
-            {
-                return role;
-            }
-        }
-
-        return null;
     }
 
     private void HandleAllNonSeekersDead()
@@ -480,7 +417,12 @@ public class GameManager : NetworkBehaviour
             return;
         }
 
-        if (hasEnded || currentGameState != GameState.Gameplay)
+        if (resultController != null && resultController.HasEnded)
+        {
+            return;
+        }
+
+        if (gameStateController != null && gameStateController.IsGameplay() == false)
         {
             return;
         }
@@ -524,76 +466,15 @@ public class GameManager : NetworkBehaviour
     public override void Spawned()
     {
         hasSpawned = true;
-        if (Object != null && Object.HasStateAuthority)
+        if (timerController != null)
         {
-            NetRemainingSeconds = totalGameSeconds;
-            NetTimerRunning = false;
-            NetStartTime = Runner != null ? Runner.SimulationTime : 0d;
+            timerController.ResetTimer(true);
         }
     }
 
     public override void FixedUpdateNetwork()
     {
-        if (Object == null || Object.HasStateAuthority == false)
-        {
-            if (Time.frameCount % 120 == 0)
-            {
-                Debug.Log($"[Timer] FixedUpdateNetwork skip: hasObject={(Object != null)} stateAuth={(Object != null && Object.HasStateAuthority)}");
-            }
-            return;
-        }
-
-        if (hasEnded || currentGameState != GameState.Gameplay)
-        {
-            if (Time.frameCount % 120 == 0)
-            {
-                Debug.Log($"[Timer] FixedUpdateNetwork skip: hasEnded={hasEnded} state={currentGameState}");
-            }
-            return;
-        }
-
-        if (NetTimerRunning == false)
-        {
-            NetTimerRunning = AreAllPlayersPresent();
-            if (NetTimerRunning == false)
-            {
-                NetRemainingSeconds = totalGameSeconds;
-                NetStartTime = Runner.SimulationTime;
-                if (Time.frameCount % 120 == 0)
-                {
-                    Debug.Log("[Timer] Waiting for players. Timer not started.");
-                }
-                return;
-            }
-
-            NetStartTime = Runner.SimulationTime;
-        }
-
-        double elapsed = Runner.SimulationTime - NetStartTime;
-        NetRemainingSeconds = Mathf.Max(0f, totalGameSeconds - (float)elapsed);
-    }
-
-    private bool AreAllPlayersPresent()
-    {
-        if (Runner == null || Runner.IsRunning == false)
-        {
-            return false;
-        }
-
-        int activeCount = 0;
-        foreach (var player in Runner.ActivePlayers)
-        {
-            activeCount++;
-        }
-
-        int expectedPlayers = 0;
-        var launcher = FindFirstObjectByType<FusionLauncher>();
-        if (launcher != null)
-        {
-            expectedPlayers = launcher.MaxPlayers;
-        }
-
-        return activeCount > 0;
+        // Timer is handled by GameTimerController.
     }
 
     private static GameObject FindLocalPlayer(GameObject[] players)

@@ -44,8 +44,6 @@ public class FusionThirdPersonMotor : NetworkBehaviour
     private int animIDStopDance;
     private int animIDDanceIndex;
     private float rotationVelocity;
-    private float fallTimeout = 0.15f;
-    private float jumpTimeout = 0.3f;
     private float lastJumpPressedTime = -10f;
     private float lastGroundedTime = -10f;
     private Camera mainCamera;
@@ -123,6 +121,7 @@ public class FusionThirdPersonMotor : NetworkBehaviour
 
         if (hasAnimator == false) return;
 
+        NetDanceIndex = -1;
         NetIsDancing = false;
         ApplyDanceStop();
     }
@@ -155,27 +154,34 @@ public class FusionThirdPersonMotor : NetworkBehaviour
             {
                 Debug.Log("[FusionThirdPersonMotor] No input for tick", this);
             }
+            if (NetIsDancing)
+            {
+                NetIsDancing = false;
+                ApplyDanceStop();
+                lastDanceIndex = -1;
+            }
             ApplyGravity(Vector3.zero);
             return;
         }
 
-        // Handle dance input first (hold-to-dance, edge-triggered).
+        // Hold-to-dance (edge-triggered to avoid retriggering every tick).
         if (input.danceIndex != lastDanceIndex)
         {
-            if (lastDanceIndex == -1 && input.danceIndex != -1)
-            {
-                StartDance(input.danceIndex);
-            }
-            else if (input.danceIndex == -1 && lastDanceIndex != -1)
+            if (input.danceIndex == -1)
             {
                 StopDance();
             }
-            else if (input.danceIndex != -1)
+            else
             {
                 StartDance(input.danceIndex);
             }
 
             lastDanceIndex = input.danceIndex;
+        }
+        else if (input.danceIndex == -1 && NetIsDancing)
+        {
+            // Safety: if input says stop but state didn't update, force stop once.
+            StopDance();
         }
 
         bool lockMovement = GameManager.Instance != null && GameManager.Instance.IsGroupDanceActive;

@@ -1,40 +1,55 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Fusion;
 using UnityEngine;
 
 public class PlayerStateManager : NetworkBehaviour
 {
     private readonly Dictionary<string, PlayerState> players = new Dictionary<string, PlayerState>();
-    private readonly List<(string playerId, bool isSeeker)> pendingRegisters = new List<(string, bool)>();
-    private readonly List<string> pendingDead = new List<string>();
     private string localPlayerId;
+    [SerializeField] private PlayerStateFallback fallback;
 
     public event System.Action<PlayerState> OnPlayerStateChanged;
     public event System.Action OnAllNonSeekersDead;
 
+    private void Awake()
+    {
+        if (fallback == null)
+        {
+            fallback = GetComponent<PlayerStateFallback>();
+        }
+
+        if (fallback == null)
+        {
+            fallback = gameObject.AddComponent<PlayerStateFallback>();
+        }
+
+        fallback.Configure(this);
+    }
+
     public override void Spawned()
     {
-        FlushPendingNetworkOps();
+        if (fallback != null)
+        {
+            fallback.FlushPendingNetworkOps();
+        }
     }
 
     public override void FixedUpdateNetwork()
     {
         if (Object != null && Object.HasStateAuthority)
         {
-            FlushPendingNetworkOps();
+            if (fallback != null)
+            {
+                fallback.FlushPendingNetworkOps();
+            }
         }
     }
 
     private void Update()
     {
-        if (pendingRegisters.Count == 0 && pendingDead.Count == 0)
+        if (fallback != null)
         {
-            return;
-        }
-
-        if (Runner != null && Runner.IsRunning && Runner.IsSharedModeMasterClient)
-        {
-            FlushPendingLocalOnly();
+            fallback.TickFallback();
         }
     }
 
@@ -47,23 +62,16 @@ public class PlayerStateManager : NetworkBehaviour
 
         if (Object == null || Runner == null || Runner.IsRunning == false)
         {
-            if (TryHandleWithoutNetwork(playerId, isSeeker))
+            if (fallback != null && fallback.TryHandleWithoutNetwork(playerId, isSeeker))
             {
                 return;
             }
 
-            pendingRegisters.Add((playerId, isSeeker));
-            Debug.Log($"[PlayerStateManager] Queue RegisterPlayer: {playerId} seeker={isSeeker} (runner={(Runner != null && Runner.IsRunning)})");
+            fallback?.QueueRegister(playerId, isSeeker);
             return;
         }
 
-        if (Object != null && Object.HasStateAuthority)
-        {
-            RpcRegisterPlayer(playerId, isSeeker);
-            return;
-        }
-
-        RpcRequestRegisterPlayer(playerId, isSeeker);
+        SendRegisterRpc(playerId, isSeeker);
     }
 
     public void MarkDeadNetworked(string playerId)
@@ -75,23 +83,16 @@ public class PlayerStateManager : NetworkBehaviour
 
         if (Object == null || Runner == null || Runner.IsRunning == false)
         {
-            if (TryHandleWithoutNetwork(playerId, null))
+            if (fallback != null && fallback.TryHandleWithoutNetwork(playerId, null))
             {
                 return;
             }
 
-            pendingDead.Add(playerId);
-            Debug.Log($"[PlayerStateManager] Queue MarkDead: {playerId} (runner={(Runner != null && Runner.IsRunning)})");
+            fallback?.QueueMarkDead(playerId);
             return;
         }
 
-        if (Object != null && Object.HasStateAuthority)
-        {
-            RpcMarkDead(playerId);
-            return;
-        }
-
-        RpcRequestMarkDead(playerId);
+        SendMarkDeadRpc(playerId);
     }
 
     [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
@@ -109,16 +110,16 @@ public class PlayerStateManager : NetworkBehaviour
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     private void RpcRegisterPlayer(string playerId, bool isSeeker)
     {
-        RegisterPlayerLocal(playerId, isSeeker);
+        ApplyRegisterLocal(playerId, isSeeker);
     }
 
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     private void RpcMarkDead(string playerId)
     {
-        MarkDeadLocal(playerId);
+        ApplyMarkDeadLocal(playerId);
     }
 
-    private void RegisterPlayerLocal(string playerId, bool isSeeker)
+    internal void ApplyRegisterLocal(string playerId, bool isSeeker)
     {
         if (string.IsNullOrEmpty(playerId))
         {
@@ -146,14 +147,13 @@ public class PlayerStateManager : NetworkBehaviour
     public void SetLocalPlayer(string playerId)
     {
         localPlayerId = playerId;
-        // When the local player is set, we might already have their state, so invoke the event.
         if (players.TryGetValue(playerId, out var playerState))
         {
             OnPlayerStateChanged?.Invoke(playerState);
         }
     }
 
-    private void MarkDeadLocal(string playerId)
+    internal void ApplyMarkDeadLocal(string playerId)
     {
         if (TryGetPlayer(playerId, out var state))
         {
@@ -255,7 +255,6 @@ public class PlayerStateManager : NetworkBehaviour
 
     public bool AreAllNonSeekersDead()
     {
-        // The game should end if there was at least one non-seeker to begin with, and now there are none left alive.
         return GetTotalNonSeekersCount() > 0 && GetAliveNonSeekersCount() == 0;
     }
 
@@ -281,86 +280,26 @@ public class PlayerStateManager : NetworkBehaviour
         return players.TryGetValue(playerId, out state);
     }
 
-    private void FlushPendingNetworkOps()
+    internal void SendRegisterRpc(string playerId, bool isSeeker)
     {
-        if (pendingRegisters.Count > 0)
+        if (Object != null && Object.HasStateAuthority)
         {
-            var pending = new List<(string playerId, bool isSeeker)>(pendingRegisters);
-            pendingRegisters.Clear();
-            for (int i = 0; i < pending.Count; i++)
-            {
-                Debug.Log($"[PlayerStateManager] Flush RegisterPlayer: {pending[i].playerId} seeker={pending[i].isSeeker}");
-                RegisterPlayerNetworked(pending[i].playerId, pending[i].isSeeker);
-            }
+            RpcRegisterPlayer(playerId, isSeeker);
+            return;
         }
 
-        if (pendingDead.Count > 0)
-        {
-            var pending = new List<string>(pendingDead);
-            pendingDead.Clear();
-            for (int i = 0; i < pending.Count; i++)
-            {
-                Debug.Log($"[PlayerStateManager] Flush MarkDead: {pending[i]}");
-                MarkDeadNetworked(pending[i]);
-            }
-        }
+        RpcRequestRegisterPlayer(playerId, isSeeker);
     }
 
-    private bool TryHandleWithoutNetwork(string playerId, bool? isSeeker)
+    internal void SendMarkDeadRpc(string playerId)
     {
-        var runner = FindFirstObjectByType<NetworkRunner>();
-        if (runner == null || runner.IsRunning == false)
+        if (Object != null && Object.HasStateAuthority)
         {
-            return false;
+            RpcMarkDead(playerId);
+            return;
         }
 
-        if (runner.IsSharedModeMasterClient == false)
-        {
-            return false;
-        }
-
-        if (Object == null)
-        {
-            Debug.LogWarning("[PlayerStateManager] NetworkObject not spawned. Using local fallback.");
-        }
-
-        if (isSeeker.HasValue)
-        {
-            RegisterPlayerLocal(playerId, isSeeker.Value);
-            Debug.Log($"[PlayerStateManager] Fallback RegisterPlayer (no network): {playerId} seeker={isSeeker.Value}");
-        }
-        else
-        {
-            MarkDeadLocal(playerId);
-            Debug.Log($"[PlayerStateManager] Fallback MarkDead (no network): {playerId}");
-        }
-
-        return true;
-    }
-
-    private void FlushPendingLocalOnly()
-    {
-        if (pendingRegisters.Count > 0)
-        {
-            var pending = new List<(string playerId, bool isSeeker)>(pendingRegisters);
-            pendingRegisters.Clear();
-            for (int i = 0; i < pending.Count; i++)
-            {
-                RegisterPlayerLocal(pending[i].playerId, pending[i].isSeeker);
-                Debug.Log($"[PlayerStateManager] Flush Local RegisterPlayer: {pending[i].playerId} seeker={pending[i].isSeeker}");
-            }
-        }
-
-        if (pendingDead.Count > 0)
-        {
-            var pending = new List<string>(pendingDead);
-            pendingDead.Clear();
-            for (int i = 0; i < pending.Count; i++)
-            {
-                MarkDeadLocal(pending[i]);
-                Debug.Log($"[PlayerStateManager] Flush Local MarkDead: {pending[i]}");
-            }
-        }
+        RpcRequestMarkDead(playerId);
     }
 
     private void TryNotifyAllNonSeekersDead()

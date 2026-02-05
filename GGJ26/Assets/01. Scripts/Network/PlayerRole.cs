@@ -108,22 +108,6 @@ public class PlayerRole : NetworkBehaviour
         MaskAssigned = true;
     }
 
-    private PlayerRef GetDeterministicSeeker()
-    {
-        PlayerRef chosen = default;
-        bool hasValue = false;
-        foreach (var player in Runner.ActivePlayers)
-        {
-            if (hasValue == false || player.RawEncoded < chosen.RawEncoded)
-            {
-                chosen = player;
-                hasValue = true;
-            }
-        }
-
-        return chosen;
-    }
-
     private int GetActivePlayerCount()
     {
         int count = 0;
@@ -164,6 +148,22 @@ public class PlayerRole : NetworkBehaviour
         }
 
         return 0;
+    }
+
+    private PlayerRef GetDeterministicSeeker()
+    {
+        PlayerRef chosen = default;
+        bool hasValue = false;
+        foreach (var player in Runner.ActivePlayers)
+        {
+            if (hasValue == false || player.RawEncoded < chosen.RawEncoded)
+            {
+                chosen = player;
+                hasValue = true;
+            }
+        }
+
+        return chosen;
     }
 
     private int GetMaskSeed()

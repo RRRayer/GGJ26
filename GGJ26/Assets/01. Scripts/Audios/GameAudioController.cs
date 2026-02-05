@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameAudioController : MonoBehaviour
 {
@@ -28,11 +29,11 @@ public class GameAudioController : MonoBehaviour
     private AudioManager audioManager;
     private SoundEmitter normalBgmEmitter;
     private SoundEmitter groupBgmEmitter;
-    private bool isGroupDanceActive;
     private Coroutine fadeRoutine;
 
     private void OnEnable()
     {
+        SceneManager.activeSceneChanged += OnActiveSceneChanged;
         if (startDiscoEvent != null)
         {
             startDiscoEvent.OnEventRaised += OnStartDisco;
@@ -52,11 +53,13 @@ public class GameAudioController : MonoBehaviour
     private void Start()
     {
         audioManager = FindFirstObjectByType<AudioManager>();
+        LobbyAudioController.StopSharedLobbyBgm();
         PlayNormalBgm();
     }
 
     private void OnDisable()
     {
+        SceneManager.activeSceneChanged -= OnActiveSceneChanged;
         if (startDiscoEvent != null)
         {
             startDiscoEvent.OnEventRaised -= OnStartDisco;
@@ -71,17 +74,17 @@ public class GameAudioController : MonoBehaviour
         {
             gameResultEvent.OnEventRaised -= OnGameResult;
         }
+
+        StopAllBgm();
     }
 
     private void OnStartDisco()
     {
-        isGroupDanceActive = true;
         PlayGroupDanceBgm();
     }
 
     private void OnStopDisco()
     {
-        isGroupDanceActive = false;
         PlayNormalBgm();
     }
 
@@ -165,6 +168,52 @@ public class GameAudioController : MonoBehaviour
         }
 
         fadeRoutine = StartCoroutine(SwitchBgmRoutine(fadeOutEmitter, cue, isGroupTarget));
+    }
+
+    private void OnActiveSceneChanged(Scene current, Scene next)
+    {
+        if (IsGameScene(next) == false)
+        {
+            StopAllBgm();
+        }
+    }
+
+    private bool IsGameScene(Scene scene)
+    {
+        string path = scene.path;
+        return path.EndsWith("GameScene.unity", System.StringComparison.OrdinalIgnoreCase)
+               || path.EndsWith("Game.unity", System.StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void StopAllBgm()
+    {
+        if (audioManager == null)
+        {
+            audioManager = FindFirstObjectByType<AudioManager>();
+        }
+
+        if (audioManager == null)
+        {
+            return;
+        }
+
+        if (fadeRoutine != null)
+        {
+            StopCoroutine(fadeRoutine);
+            fadeRoutine = null;
+        }
+
+        if (normalBgmEmitter != null)
+        {
+            audioManager.StopEmitter(normalBgmEmitter);
+            normalBgmEmitter = null;
+        }
+
+        if (groupBgmEmitter != null)
+        {
+            audioManager.StopEmitter(groupBgmEmitter);
+            groupBgmEmitter = null;
+        }
     }
 
     private System.Collections.IEnumerator SwitchBgmRoutine(SoundEmitter fadeOutEmitter, AudioCueSO cue, bool isGroupTarget)

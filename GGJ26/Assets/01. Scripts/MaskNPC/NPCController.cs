@@ -181,6 +181,16 @@ public class NPCController : NetworkBehaviour
 
         ApplyNetworkCommands();
 
+        if (animator == null)
+        {
+            animator = GetComponent<Animator>();
+        }
+
+        if (animator == null)
+        {
+            return;
+        }
+
         JumpAndGravity(deltaTime);
         GroundedCheck();
         Move(deltaTime);

@@ -57,7 +57,7 @@ public class FileManager
             //Debug.Log($"[FileManager] Save file deleted successfully: {fullPath}");
             return true;
         }
-        catch (Exception e)
+        catch (Exception)
         {
             //Log.E($"[FileManager] Failed to delete save data. Path: {fullPath}, exception: {e.Message}");
             return false;
