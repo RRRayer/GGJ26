@@ -1023,7 +1023,7 @@ MonoBehaviour:
   roomPasswordInput: {fileID: 0}
   createRoomButton: {fileID: 0}
   joinRoomButton: {fileID: 0}
-  popupRoot: {fileID: 815759298}
+  popupRoot: {fileID: 0}
   popupText: {fileID: 0}
   cancelButton: {fileID: 0}
 --- !u!4 &613837319
@@ -2473,6 +2473,9 @@ MonoBehaviour:
   blueNpcPrefab: {fileID: 7212592482297200950, guid: 2860bd911f38a414da4def5e231f5f6b, type: 3}
   greenNpcPrefab: {fileID: 3053083809587001794, guid: 4d72ed3f3826b5b4783bbf4a992054e2, type: 3}
   npcsPerColor: 9
+  spawnService: {fileID: 0}
+  roleService: {fileID: 0}
+  inputBridge: {fileID: 0}
 --- !u!1 &2104941839
 GameObject:
   m_ObjectHideFlags: 0

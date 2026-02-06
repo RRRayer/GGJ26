@@ -90,6 +90,7 @@ public class LobbyMatchmakingUI : MonoBehaviour
         if (cancelButton != null)
         {
             cancelButton.onClick.AddListener(CancelMatchmaking);
+            cancelButton.onClick.AddListener(ClosePopup);
         }
 
         if (launcher != null)
@@ -124,6 +125,7 @@ public class LobbyMatchmakingUI : MonoBehaviour
         if (cancelButton != null)
         {
             cancelButton.onClick.RemoveListener(CancelMatchmaking);
+            cancelButton.onClick.RemoveListener(ClosePopup);
         }
 
         if (launcher != null)
@@ -240,6 +242,16 @@ public class LobbyMatchmakingUI : MonoBehaviour
         }
 
         launcher.CancelMatchmaking();
+    }
+
+    private void ClosePopup()
+    {
+        if (popupRoot == null)
+        {
+            return;
+        }
+
+        popupRoot.SetActive(false);
     }
 
     private void OnMatchmakingStateChanged(bool isMatchmaking)
