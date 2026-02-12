@@ -5,3 +5,7 @@
 .vs/
 Drilling/Drilling.slnx
 Drilling/Drilling.slnx
+
+# GEMINI
+.gemini/
+.agent/
