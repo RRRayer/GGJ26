@@ -102,7 +102,7 @@ public class StunGun : NetworkBehaviour
             return;
         }
 
-        if (DanceEventPublisher.IsGroupDanceActive || DanceEventPublisher.IsAnyMaskDanceActive)
+        if (DanceEventPublisher.IsGroupDanceActive)
         {
             return;
         }
@@ -169,6 +169,11 @@ public class StunGun : NetworkBehaviour
         fx.PlayHitSfx(position);
     }
 
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RpcSpawnHitEffect(Vector3 position, Vector3 normal)
+    {
+        fx.SpawnHitEffect(position, normal);
+    }
 
     private void UpdateCrosshair()
     {
@@ -380,6 +385,7 @@ public class StunGun : NetworkBehaviour
         }
 
         RpcPlayHitSfx(hit.point);
+        RpcSpawnHitEffect(hit.point, hit.normal);
         HandleHit(hit);
     }
 
