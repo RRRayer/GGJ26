@@ -55,6 +55,10 @@ public class NPCController : NetworkBehaviour
 
     [Tooltip("What layers the character uses as ground")]
     public LayerMask GroundLayers;
+    [Header("Death Ground Snap")]
+    [SerializeField] private float deathGroundSnapDuration = 2.5f;
+    [SerializeField] private float deathGroundSnapInterval = 0.08f;
+    [SerializeField] private float deathGroundOffset = 0.02f;
 
     
     // movement
@@ -114,6 +118,8 @@ public class NPCController : NetworkBehaviour
     [Networked] private NetworkBool IsDancing { get; set; }
     private bool snappedToGroundOnDeath;
     private bool hasSpawned;
+    private float deathGroundSnapUntilTime;
+    private float nextDeathGroundSnapTime;
 
     private void Start()
     {
@@ -214,15 +220,38 @@ public class NPCController : NetworkBehaviour
             return;
         }
 
-        if (IsDead && snappedToGroundOnDeath == false)
+        if (IsDead == false)
         {
-            Vector3 origin = transform.position + Vector3.up * 1f;
-            if (Physics.Raycast(origin, Vector3.down, out RaycastHit hit, 20f, GroundLayers, QueryTriggerInteraction.Ignore))
-            {
-                transform.position = hit.point;
-                snappedToGroundOnDeath = true;
-            }
+            return;
         }
+
+        if (Time.time < nextDeathGroundSnapTime || Time.time > deathGroundSnapUntilTime)
+        {
+            return;
+        }
+
+        nextDeathGroundSnapTime = Time.time + deathGroundSnapInterval;
+        if (TrySnapToGround())
+        {
+            snappedToGroundOnDeath = true;
+        }
+    }
+
+    private bool TrySnapToGround()
+    {
+        Vector3 origin = transform.position + Vector3.up * 1.2f;
+        if (Physics.Raycast(origin, Vector3.down, out RaycastHit hit, 30f, GroundLayers, QueryTriggerInteraction.Ignore))
+        {
+            Vector3 snapped = hit.point + Vector3.up * deathGroundOffset;
+            if ((transform.position - snapped).sqrMagnitude > 0.0001f)
+            {
+                transform.position = snapped;
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     #region Public Methods for AI Control
@@ -405,6 +434,8 @@ public class NPCController : NetworkBehaviour
         }
         IsDancing = false;
         snappedToGroundOnDeath = false;
+        deathGroundSnapUntilTime = Time.time + deathGroundSnapDuration;
+        nextDeathGroundSnapTime = 0f;
         if (animator == null)
         {
             animator = GetComponent<Animator>();

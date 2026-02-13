@@ -11,6 +11,9 @@ public class PlayerElimination : NetworkBehaviour
     [SerializeField] private Animator animator;
     [SerializeField] private GameObject spectatorRigPrefab;
     [SerializeField] private LayerMask deathGroundLayers = -1;
+    [SerializeField] private float deathGroundSnapDuration = 2.5f;
+    [SerializeField] private float deathGroundSnapInterval = 0.08f;
+    [SerializeField] private float deathGroundOffset = 0.02f;
 
     [Networked]
     public NetworkBool IsEliminated { get; private set; }
@@ -21,6 +24,8 @@ public class PlayerElimination : NetworkBehaviour
     private int animIDDead;
     private bool snappedToGroundOnDeath;
     private GameObject spectatorInstance;
+    private float deathGroundSnapUntilTime;
+    private float nextDeathGroundSnapTime;
 
     private void Awake()
     {
@@ -125,6 +130,8 @@ public class PlayerElimination : NetworkBehaviour
 
         animator.SetTrigger(animIDDead);
         snappedToGroundOnDeath = false;
+        deathGroundSnapUntilTime = Time.time + deathGroundSnapDuration;
+        nextDeathGroundSnapTime = 0f;
     }
 
     public void ResetElimination()
@@ -194,6 +201,8 @@ public class PlayerElimination : NetworkBehaviour
         {
             animator.SetTrigger(animIDDead);
             snappedToGroundOnDeath = false;
+            deathGroundSnapUntilTime = Time.time + deathGroundSnapDuration;
+            nextDeathGroundSnapTime = 0f;
         }
 
         if (eliminated && playerStateManager == null)
@@ -258,16 +267,38 @@ public class PlayerElimination : NetworkBehaviour
 
     private void LateUpdate()
     {
-        if (IsEliminated == false || snappedToGroundOnDeath)
+        if (IsEliminated == false)
         {
             return;
         }
 
-        Vector3 origin = transform.position + Vector3.up * 1f;
-        if (Physics.Raycast(origin, Vector3.down, out RaycastHit hit, 20f, deathGroundLayers, QueryTriggerInteraction.Ignore))
+        if (Time.time < nextDeathGroundSnapTime || Time.time > deathGroundSnapUntilTime)
         {
-            transform.position = hit.point;
+            return;
+        }
+
+        nextDeathGroundSnapTime = Time.time + deathGroundSnapInterval;
+
+        if (TrySnapToGround())
+        {
             snappedToGroundOnDeath = true;
         }
+    }
+
+    private bool TrySnapToGround()
+    {
+        Vector3 origin = transform.position + Vector3.up * 1.2f;
+        if (Physics.Raycast(origin, Vector3.down, out RaycastHit hit, 30f, deathGroundLayers, QueryTriggerInteraction.Ignore))
+        {
+            Vector3 snapped = hit.point + Vector3.up * deathGroundOffset;
+            if ((transform.position - snapped).sqrMagnitude > 0.0001f)
+            {
+                transform.position = snapped;
+            }
+
+            return true;
+        }
+
+        return false;
     }
 }
