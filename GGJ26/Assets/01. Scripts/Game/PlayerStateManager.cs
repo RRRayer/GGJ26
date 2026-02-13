@@ -235,7 +235,6 @@ public class PlayerStateManager : NetworkBehaviour
             }
         }
 
-        Debug.Log("Total Seekers Count: " + count);
         return count;
     }
 
@@ -249,7 +248,6 @@ public class PlayerStateManager : NetworkBehaviour
                 count++;
             }
         }
-        Debug.Log("Total Non-Seekers Count: " + count);
         return count;
     }
 

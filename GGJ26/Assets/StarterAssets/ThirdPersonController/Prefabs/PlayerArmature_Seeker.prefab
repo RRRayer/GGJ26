@@ -1222,7 +1222,7 @@ MonoBehaviour:
   FootstepAudioVolume: 0.3
   sfxEventChannel: {fileID: 11400000, guid: 842476557eddfca48a0ab8a928a08334, type: 2}
   sfxConfiguration: {fileID: 11400000, guid: 854501da1c4d88b498813056f7cc098d, type: 2}
-  landingSfxCue: {fileID: 0}
+  landingSfxCue: {fileID: 11400000, guid: 8cbd34c46b949924ea5c0d20a789c4a4, type: 2}
   footstepSfxCues: []
   JumpHeight: 1.2
   Gravity: -15
@@ -1443,8 +1443,11 @@ MonoBehaviour:
   groundLayers:
     serializedVersion: 2
     m_Bits: 1
-  debugInput: 0
   updateAnimator: 1
+  npcDanceCommandSettings: {fileID: 11400000, guid: cde42c8bd9b9e2a42b13ef236e862d16, type: 2}
+  npcDanceCommandRadius: 8
+  npcDanceDuration: 2.5
+  npcDanceCommandCooldown: 0.5
 --- !u!114 &8096708549146426077
 MonoBehaviour:
   m_ObjectHideFlags: 0

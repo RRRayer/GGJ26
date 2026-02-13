@@ -1,66 +1,54 @@
 ﻿using Fusion;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 
-/// <summary>
-/// 모든 NPC ?�크립트가 ?�속받을 부�?추상 ?�래?�입?�다.
-/// NPC??공통 기능�??�동 로직???�한 뼈�?�??�공?�니??
-/// </summary>
 [RequireComponent(typeof(NPCController))]
 public abstract class BaseNPC : MonoBehaviour
 {
-    // ?�식 ?�래?�들???�근?????�도�?protected�?NPCController 참조�??�공?�니??
     protected NPCController NpcController { get; private set; }
     protected NavMeshAgent agent;
     protected WanderPointProvider wanderProvider;
+
     protected bool HasStateAuthority
     {
-        get
-        {
-            return NpcController != null && NpcController.Object != null && NpcController.Object.HasStateAuthority;
-        }
+        get { return NpcController != null && NpcController.Object != null && NpcController.Object.HasStateAuthority; }
     }
+
     protected bool IsAgentReady
     {
-        get
-        {
-            return agent != null && agent.enabled && agent.isOnNavMesh;
-        }
+        get { return agent != null && agent.enabled && agent.isOnNavMesh; }
     }
 
-    [Header("?�벤??채널 - Listening to")]
+    [Header("Event Channels - Listening to")]
     [SerializeField] private BoolEventChannelSO OnGroupDanceStart;
     [SerializeField] public IntEventChannelSO DanceIndexChannel;
-    
+    // Seeker NPC 춤 명령 이벤트를 수신하는 ScriptableObject입니다.
+    [SerializeField] private SeekerNpcDanceCommandEventChannelSO seekerNpcDanceCommandEvent;
+
     public enum ActionState
     {
-        // 가�??�동
         MaskBehavior,
-
-        // 가�??�스
         MaskDance,
-
-        // ?�체 ?�스
         GroupDance
     }
 
-    private ActionState currentState;/// <summary>
-    /// Awake??컴포?�트 참조�?초기?�하?????�용?�니??
-    /// ?�식 ?�래?�에??Awake�??�정??override)??경우, base.Awake()�??�출?�야 ?�니??
-    /// </summary>
+    private ActionState currentState;
+    // Seeker NPC 춤을 멈추기 위한 코루틴 참조.
+    private Coroutine seekerDanceStopRoutine;
+
     protected virtual void Awake()
     {
-        // ???�크립트가 붙�? 게임 ?�브?�트?�서 NPCController 컴포?�트�?찾습?�다.
         NpcController = GetComponent<NPCController>();
         agent = GetComponent<NavMeshAgent>();
         wanderProvider = GetComponent<WanderPointProvider>();
 
-        // NavMeshAgent가 캐릭?�의 ?�치???�전??직접 ?�어?��? ?�도�??�정?�니??
-        // 모든 ?�제 ?�직임?� NPCController가 ?�당?�니??
-        agent.updatePosition = false;
-        agent.updateRotation = false;
+        if (agent != null)
+        {
+            agent.updatePosition = false;
+            agent.updateRotation = false;
+        }
     }
-
 
     private void OnEnable()
     {
@@ -74,6 +62,15 @@ public abstract class BaseNPC : MonoBehaviour
             DanceIndexChannel.OnEventRaised += ExecuteMaskDance;
         }
 
+        // Seeker NPC 춤 명령 이벤트를 구독합니다.
+        if (seekerNpcDanceCommandEvent != null)
+        {
+            seekerNpcDanceCommandEvent.OnEventRaised += ExecuteSeekerDanceCommand;
+        }
+        else
+        {
+            DanceEventPublisher.OnSeekerNpcDanceCommand += ExecuteSeekerDanceCommand;
+        }
     }
 
     private void OnDisable()
@@ -86,6 +83,23 @@ public abstract class BaseNPC : MonoBehaviour
         if (DanceIndexChannel != null)
         {
             DanceIndexChannel.OnEventRaised -= ExecuteMaskDance;
+        }
+
+        // Seeker NPC 춤 명령 이벤트를 구독 해제합니다.
+        if (seekerNpcDanceCommandEvent != null)
+        {
+            seekerNpcDanceCommandEvent.OnEventRaised -= ExecuteSeekerDanceCommand;
+        }
+        else
+        {
+            DanceEventPublisher.OnSeekerNpcDanceCommand -= ExecuteSeekerDanceCommand;
+        }
+
+        // Seeker NPC 춤 중이었다면 코루틴을 중지합니다.
+        if (seekerDanceStopRoutine != null)
+        {
+            StopCoroutine(seekerDanceStopRoutine);
+            seekerDanceStopRoutine = null;
         }
     }
 
@@ -100,13 +114,19 @@ public abstract class BaseNPC : MonoBehaviour
         {
             DanceIndexChannel.OnEventRaised -= ExecuteMaskDance;
         }
+
+        // Seeker NPC 춤 명령 이벤트를 구독 해제합니다.
+        if (seekerNpcDanceCommandEvent != null)
+        {
+            seekerNpcDanceCommandEvent.OnEventRaised -= ExecuteSeekerDanceCommand;
+        }
+        else
+        {
+            DanceEventPublisher.OnSeekerNpcDanceCommand -= ExecuteSeekerDanceCommand;
+        }
     }
 
-    /// <summary>
-    /// Unity??Update 루프?�니??
-    /// �??�레?�마???�식 ?�래?��? 구체?�으�??�의???�동 로직???�행?�니??
-    /// </summary>
-        private void Update()
+    private void Update()
     {
         if (HasStateAuthority == false)
         {
@@ -136,7 +156,8 @@ public abstract class BaseNPC : MonoBehaviour
             ExecuteMaskBehavior();
         }
     }
-protected float GetDeltaTime()
+
+    protected float GetDeltaTime()
     {
         if (NpcController != null)
         {
@@ -146,16 +167,8 @@ protected float GetDeltaTime()
         return Time.deltaTime;
     }
 
-    /// <summary>
-    /// �?그룹??가�??�동
-    /// </summary>
     protected abstract void ExecuteMaskBehavior();
 
-
-    /// <summary>
-    /// �?그룹�?가�??�스. 그룹 별로 같�? �?
-    /// </summary>
-    /// <param name="isStart"></param>
     protected void ExecuteMaskDance(int danceIndex)
     {
         if (NpcController == null)
@@ -165,25 +178,20 @@ protected float GetDeltaTime()
 
         if (currentState == ActionState.GroupDance)
         {
-            // ?�체 ?�스 중일 ?�는 가�??�스�??�환?��? ?�음
             return;
         }
+
         if (danceIndex == -1)
         {
             currentState = ActionState.MaskBehavior;
             NpcController.StopDance();
+            return;
         }
-        else
-        {
-            currentState = ActionState.MaskDance;
-            NpcController.StartDance(danceIndex);
-        }
+
+        currentState = ActionState.MaskDance;
+        NpcController.StartDance(danceIndex);
     }
 
-    /// <summary>
-    /// ?�체 ?�스. 모두가 ?�께 �? ?��? ?�덤
-    /// </summary>
-    /// <param name="isStart"></param>
     protected void ExecuteGroupDance(bool isStart)
     {
         if (NpcController == null)
@@ -191,7 +199,7 @@ protected float GetDeltaTime()
             return;
         }
 
-        int danceIndex = Random.Range(0, 5); // 0~4 (Group Dance includes Crazy)
+        int danceIndex = Random.Range(0, 5);
         if (isStart)
         {
             currentState = ActionState.GroupDance;
@@ -204,12 +212,59 @@ protected float GetDeltaTime()
         }
     }
 
+    /// <summary>
+    /// Seeker NPC 춤 명령을 실행합니다.
+    /// NPC의 현재 위치가 명령의 반경 내에 있을 경우 춤을 시작하고, 지정된 시간 후 멈춥니다.
+    /// </summary>
+    private void ExecuteSeekerDanceCommand(SeekerNpcDanceCommand command)
+    {
+        if (NpcController == null || currentState == ActionState.GroupDance)
+        {
+            return;
+        }
+
+        Vector3 delta = transform.position - command.center;
+        delta.y = 0f;
+        if (delta.sqrMagnitude > command.radius * command.radius)
+        {
+            return;
+        }
+
+        currentState = ActionState.MaskDance;
+        NpcController.StartDance(command.danceIndex);
+
+        if (seekerDanceStopRoutine != null)
+        {
+            StopCoroutine(seekerDanceStopRoutine);
+        }
+
+        seekerDanceStopRoutine = StartCoroutine(StopSeekerDanceAfter(command.duration));
+    }
+
+    /// <summary>
+    /// 지정된 시간 후 Seeker NPC의 춤을 멈춥니다.
+    /// </summary>
+    private IEnumerator StopSeekerDanceAfter(float duration)
+    {
+        yield return new WaitForSeconds(duration);
+        seekerDanceStopRoutine = null;
+
+        if (NpcController == null || currentState == ActionState.GroupDance)
+        {
+            yield break;
+        }
+
+        currentState = ActionState.MaskBehavior;
+        NpcController.StopDance();
+    }
+
     public float RandomRangePicker(float[] range)
     {
         if (range.Length != 2)
         {
             return 0f;
         }
+
         return Random.Range(range[0], range[1]);
     }
 
@@ -219,7 +274,7 @@ protected float GetDeltaTime()
         {
             return 0;
         }
-        // For integers, Random.Range's upper bound is exclusive, so add 1 to make it inclusive.
+
         return Random.Range(range[0], range[1] + 1);
     }
 }

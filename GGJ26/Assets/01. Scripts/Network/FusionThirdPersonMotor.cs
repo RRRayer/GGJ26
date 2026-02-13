@@ -18,8 +18,16 @@ public class FusionThirdPersonMotor : NetworkBehaviour
     [SerializeField] private float groundedOffset = -0.14f;
     [SerializeField] private float groundedRadius = 0.28f;
     [SerializeField] private LayerMask groundLayers = 1;
-    [SerializeField] private bool debugInput = false;
     [SerializeField] private bool updateAnimator = true;
+    [Header("Seeker NPC 춤 명령")]
+    // Seeker NPC 춤 명령 설정을 위한 ScriptableObject입니다.
+    [SerializeField] private SeekerNpcDanceCommandSettingsSO npcDanceCommandSettings;
+    // Seeker NPC 춤 명령 반경입니다. (ScriptableObject 설정이 없을 경우 사용)
+    [SerializeField] private float npcDanceCommandRadius = 8f;
+    // Seeker NPC 춤 지속 시간입니다. (ScriptableObject 설정이 없을 경우 사용)
+    [SerializeField] private float npcDanceDuration = 2.5f;
+    // Seeker NPC 춤 명령 재사용 대기 시간입니다. (ScriptableObject 설정이 없을 경우 사용)
+    [SerializeField] private float npcDanceCommandCooldown = 0.5f;
 
     // --- FIX: REMOVED [Networked] attribute from physics-related properties ---
     // These properties are now local to the State Authority.
@@ -51,11 +59,22 @@ public class FusionThirdPersonMotor : NetworkBehaviour
     private PlayerRole role;
     private int lastDanceIndex = -1;
     private PlayerElimination elimination;
+    // 다음 NPC 춤 명령을 내릴 수 있는 시간입니다.
+    private float nextNpcDanceCommandTime;
+    // DanceEventPublisher 인스턴스 참조입니다.
+    private DanceEventPublisher danceEventPublisher;
     
     // --- FIX: Added for local animation state calculation ---
     private Vector3 lastRenderPosition;
     private bool lastNetIsDancing;
     private int lastNetDanceIndex;
+
+    // Seeker NPC 춤 명령 반경을 반환합니다. ScriptableObject 설정이 우선됩니다.
+    private float NpcDanceRadius => npcDanceCommandSettings != null ? npcDanceCommandSettings.radius : npcDanceCommandRadius;
+    // Seeker NPC 춤 지속 시간을 반환합니다. ScriptableObject 설정이 우선됩니다.
+    private float NpcDanceDuration => npcDanceCommandSettings != null ? npcDanceCommandSettings.duration : npcDanceDuration;
+    // Seeker NPC 춤 명령 재사용 대기 시간을 반환합니다. ScriptableObject 설정이 우선됩니다.
+    private float NpcDanceCooldown => npcDanceCommandSettings != null ? npcDanceCommandSettings.cooldown : npcDanceCommandCooldown;
 
     private void Awake()
     {
@@ -83,6 +102,9 @@ public class FusionThirdPersonMotor : NetworkBehaviour
             animIDStopDance = Animator.StringToHash("StopDance");
             animIDDanceIndex = Animator.StringToHash("DanceIndex");
         }
+
+        // 씬에서 DanceEventPublisher 인스턴스를 찾아 참조합니다.
+        danceEventPublisher = FindFirstObjectByType<DanceEventPublisher>();
     }
     
     // --- FIX: Added Spawned() to initialize render position ---
@@ -150,10 +172,6 @@ public class FusionThirdPersonMotor : NetworkBehaviour
 
         if (GetInput(out PlayerInputData input) == false)
         {
-            if (debugInput)
-            {
-                Debug.Log("[FusionThirdPersonMotor] No input for tick", this);
-            }
             if (NetIsDancing)
             {
                 NetIsDancing = false;
@@ -164,7 +182,22 @@ public class FusionThirdPersonMotor : NetworkBehaviour
             return;
         }
 
-        bool lockMovement = GameManager.Instance != null && GameManager.Instance.IsGroupDanceActive;
+        // NPC 춤 명령 처리: 입력이 있고, 플레이어가 Seeker이며, 쿨다운이 경과했을 경우
+        if (input.npcDanceCommand && role != null && role.IsSeeker && Runner.SimulationTime >= nextNpcDanceCommandTime)
+        {
+            nextNpcDanceCommandTime = Runner.SimulationTime + NpcDanceCooldown;
+            // DanceEventPublisher가 없으면 씬에서 찾아 할당합니다.
+            if (danceEventPublisher == null)
+            {
+                danceEventPublisher = FindFirstObjectByType<DanceEventPublisher>();
+            }
+
+            // DanceEventPublisher를 통해 Seeker NPC 춤을 요청합니다.
+            if (danceEventPublisher != null)
+            {
+                danceEventPublisher.RequestSeekerNpcDance(transform.position, NpcDanceRadius, NpcDanceDuration);
+            }
+        }
 
         // Hold-to-dance (edge-triggered to avoid retriggering every tick).
         if (input.danceIndex != lastDanceIndex)
@@ -206,10 +239,6 @@ public class FusionThirdPersonMotor : NetworkBehaviour
         }
 
         Vector3 move = lockMovement ? Vector3.zero : new Vector3(input.Move.x, 0f, input.Move.y);
-        if (debugInput)
-        {
-            Debug.Log($"[FusionThirdPersonMotor] move={move} jump={input.Jump} sprint={input.Sprint}", this);
-        }
         if (move.sqrMagnitude > 1f)
         {
             move.Normalize();

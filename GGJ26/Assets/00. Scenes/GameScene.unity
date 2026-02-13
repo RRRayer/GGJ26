@@ -5897,6 +5897,10 @@ PrefabInstance:
       propertyPath: SortKey
       value: 771364557
       objectReference: {fileID: 0}
+    - target: {fileID: 8123527540548691173, guid: 5b7c902b5a9a4b04d9e709d1ea6ce83d, type: 3}
+      propertyPath: seekerNpcDanceCommandEvent
+      value: 
+      objectReference: {fileID: 11400000, guid: 59572622e5805c143945650d7739366f, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

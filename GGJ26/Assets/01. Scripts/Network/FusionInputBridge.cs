@@ -36,10 +36,14 @@ public class FusionInputBridge : MonoBehaviour
             data.Jump = inputs.jump;
             data.Sprint = inputs.sprint;
             data.danceIndex = GetDanceIndex(inputs, playerInput);
+            // NPC 춤 명령 입력을 설정합니다.
+            data.npcDanceCommand = GetNpcDanceCommand(playerInput);
         }
         else
         {
             data.danceIndex = -1;
+            // NPC 춤 명령 입력을 설정합니다.
+            data.npcDanceCommand = GetNpcDanceCommand(playerInput);
         }
 
         input.Set(data);
@@ -125,20 +129,61 @@ public class FusionInputBridge : MonoBehaviour
         return false;
     }
 
-    private bool IsPressed(UnityEngine.InputSystem.InputActionMap actionMap, string actionName)
+    /// <summary>
+    /// NPC 춤 명령 입력을 감지합니다.
+    /// 특정 액션이나 'E' 키 입력을 확인합니다.
+    /// </summary>
+    private bool GetNpcDanceCommand(UnityEngine.InputSystem.PlayerInput playerInput)
     {
-        if (actionMap == null)
+        if (playerInput != null && playerInput.actions != null)
+        {
+            if (WasPressedAnyMap(playerInput, "NpcDanceCommand")) return true;
+            if (WasPressedAnyMap(playerInput, "CommandDanceNPC")) return true;
+            if (WasPressedAnyMap(playerInput, "DanceNpcCommand")) return true;
+        }
+
+        var keyboard = UnityEngine.InputSystem.Keyboard.current;
+        if (keyboard == null)
         {
             return false;
         }
 
-        var action = actionMap.FindAction(actionName, false);
-        if (action == null)
+        return keyboard.eKey.wasPressedThisFrame;
+    }
+
+    /// <summary>
+    /// PlayerInput의 모든 액션 맵에서 특정 액션이 눌렸는지 확인합니다.
+    /// </summary>
+    private bool WasPressedAnyMap(UnityEngine.InputSystem.PlayerInput playerInput, string actionName)
+    {
+        var actions = playerInput.actions;
+        if (actions == null)
         {
             return false;
         }
 
-        return action.IsPressed();
+        var action = actions.FindAction(actionName, false);
+        if (action != null)
+        {
+            return action.WasPressedThisFrame();
+        }
+
+        for (int i = 0; i < actions.actionMaps.Count; i++)
+        {
+            var map = actions.actionMaps[i];
+            if (map == null)
+            {
+                continue;
+            }
+
+            action = map.FindAction(actionName, false);
+            if (action != null && action.WasPressedThisFrame())
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private NetworkObject GetLocalPlayerObject(NetworkRunner runner)
