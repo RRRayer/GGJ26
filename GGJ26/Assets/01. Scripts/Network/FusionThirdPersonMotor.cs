@@ -182,8 +182,9 @@ public class FusionThirdPersonMotor : NetworkBehaviour
             return;
         }
 
-        // NPC 춤 명령 처리: 입력이 있고, 플레이어가 Seeker이며, 쿨다운이 경과했을 경우
-        if (input.npcDanceCommand && role != null && role.IsSeeker && Runner.SimulationTime >= nextNpcDanceCommandTime)
+        bool lockMovement = GameManager.Instance != null && GameManager.Instance.IsGroupDanceActive;
+        // Seeker NPC dance command (disabled during group dance).
+        if (lockMovement == false && input.npcDanceCommand && role != null && role.IsSeeker && Runner.SimulationTime >= nextNpcDanceCommandTime)
         {
             nextNpcDanceCommandTime = Runner.SimulationTime + NpcDanceCooldown;
             // DanceEventPublisher가 없으면 씬에서 찾아 할당합니다.
@@ -382,3 +383,5 @@ public class FusionThirdPersonMotor : NetworkBehaviour
     }
 
 }
+
+
