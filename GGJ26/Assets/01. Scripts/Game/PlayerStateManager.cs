@@ -5,6 +5,7 @@ using UnityEngine;
 public class PlayerStateManager : NetworkBehaviour
 {
     private readonly Dictionary<string, PlayerState> players = new Dictionary<string, PlayerState>();
+    private readonly HashSet<string> pendingDeadPlayers = new HashSet<string>();
     private string localPlayerId;
     [SerializeField] private PlayerStateFallback fallback;
 
@@ -140,6 +141,12 @@ public class PlayerStateManager : NetworkBehaviour
             Debug.Log($"[PlayerStateManager] Registering new player {playerId}: IsSeeker = {isSeeker}");
         }
 
+        // Death RPC can arrive before register RPC; preserve that state to avoid missed game-end checks.
+        if (pendingDeadPlayers.Remove(playerId))
+        {
+            playerState.IsDead = true;
+        }
+
         OnPlayerStateChanged?.Invoke(playerState);
         TryNotifyAllNonSeekersDead();
     }
@@ -157,6 +164,7 @@ public class PlayerStateManager : NetworkBehaviour
     {
         if (TryGetPlayer(playerId, out var state))
         {
+            pendingDeadPlayers.Remove(playerId);
             state.IsDead = true;
             Debug.Log($"[PlayerStateManager] MarkDead: player {playerId} now dead.");
             OnPlayerStateChanged?.Invoke(state);
@@ -164,7 +172,17 @@ public class PlayerStateManager : NetworkBehaviour
         }
         else
         {
-            Debug.LogWarning($"[PlayerStateManager] MarkDead: player {playerId} not found.");
+            if (TryRecoverMissingPlayerState(playerId, out var recovered))
+            {
+                pendingDeadPlayers.Remove(playerId);
+                Debug.LogWarning($"[PlayerStateManager] MarkDead: player {playerId} was missing, recovered from scene role data.");
+                OnPlayerStateChanged?.Invoke(recovered);
+                TryNotifyAllNonSeekersDead();
+                return;
+            }
+
+            pendingDeadPlayers.Add(playerId);
+            Debug.LogWarning($"[PlayerStateManager] MarkDead: player {playerId} not found. Queued until register arrives.");
         }
     }
 
@@ -322,6 +340,35 @@ public class PlayerStateManager : NetworkBehaviour
 
         if (Runner != null && Runner.IsRunning && Runner.IsSharedModeMasterClient)
         {
+            return true;
+        }
+
+        return false;
+    }
+
+    private bool TryRecoverMissingPlayerState(string playerId, out PlayerState recovered)
+    {
+        recovered = null;
+        var roles = FindObjectsByType<PlayerRole>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        foreach (var role in roles)
+        {
+            if (role == null || role.Object == null)
+            {
+                continue;
+            }
+
+            string rolePlayerId = role.Object.InputAuthority.RawEncoded.ToString();
+            if (string.Equals(rolePlayerId, playerId, System.StringComparison.Ordinal) == false)
+            {
+                continue;
+            }
+
+            recovered = new PlayerState(playerId, role.IsSeeker)
+            {
+                IsDead = true
+            };
+
+            players[playerId] = recovered;
             return true;
         }
 
