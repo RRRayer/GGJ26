@@ -1,45 +1,88 @@
-using System.Collections;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class UIMenuManager : MonoBehaviour
 {
     [Header("UI Components")]
     [SerializeField] private UIGenericButton startGameButton;
+    [SerializeField] private UIGenericButton skinChangeButton;
+    [SerializeField] private UIGenericButton settingsButton;
     [SerializeField] private UIGenericButton exitButton;
+    [SerializeField] private GameObject settingsPanel;
+    [SerializeField] private UISkinSelectController skinSelectPanel;
+
+    [Header("Start Flow")]
+    [SerializeField] private bool startBySceneLoad = true;
+    [SerializeField] private string startSceneName = "Lobby";
 
     [Header("Listening to")]
     [SerializeField] private GameStateEventChannelSO onGameStateChanged;
 
     private void OnEnable()
     {
-        startGameButton.Clicked += StartGame;
-        exitButton.Clicked += ExitGame;
+        if (startGameButton != null) startGameButton.Clicked += StartGame;
+        if (skinChangeButton != null) skinChangeButton.Clicked += OpenSkinSelect;
+        if (settingsButton != null) settingsButton.Clicked += OpenSettings;
+        if (exitButton != null) exitButton.Clicked += ExitGame;
+
     }
 
     private void OnDisable()
     {
-        startGameButton.Clicked -= StartGame;
-        exitButton.Clicked -= ExitGame;
-    }
-    
-    /// <summary>
-    /// Binding to 게임 시작 버튼
-    /// </summary>
-    private void StartGame()
-    {
-        // 1. 게임 메뉴 -> 게임플레이 상태 전환
-        GameManager.Instance.UpdateGameState(GameState.Gameplay);
+        if (startGameButton != null) startGameButton.Clicked -= StartGame;
+        if (skinChangeButton != null) skinChangeButton.Clicked -= OpenSkinSelect;
+        if (settingsButton != null) settingsButton.Clicked -= OpenSettings;
+        if (exitButton != null) exitButton.Clicked -= ExitGame;
+
     }
 
-    /// <summary>
-    /// Binding to 게임 종료 버튼
-    /// </summary>
+    private void StartGame()
+    {
+        if (startBySceneLoad)
+        {
+            if (string.IsNullOrWhiteSpace(startSceneName) == false)
+            {
+                SceneManager.LoadScene(startSceneName);
+            }
+            return;
+        }
+
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.UpdateGameState(GameState.Gameplay);
+        }
+    }
+
+    private void OpenSkinSelect()
+    {
+        if (skinSelectPanel != null)
+        {
+            skinSelectPanel.Open();
+        }
+    }
+
+    private void OpenSettings()
+    {
+        if (settingsPanel != null)
+        {
+            settingsPanel.SetActive(true);
+        }
+    }
+
+    private void CloseSettings()
+    {
+        if (settingsPanel != null)
+        {
+            settingsPanel.SetActive(false);
+        }
+    }
+
     private void ExitGame()
     {
-    #if UNITY_EDITOR
+#if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
-    #else
-        Application.Quit();  
-    #endif
+#else
+        Application.Quit();
+#endif
     }
 }

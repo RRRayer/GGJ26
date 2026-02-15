@@ -9,12 +9,14 @@ public class PlayerRole : NetworkBehaviour
     [Networked] private int MaskColorIndex { get; set; }
     [Networked] private NetworkBool MaskAssigned { get; set; }
     [Networked] private int MaskSeed { get; set; }
+    [Networked] private int SeekerSkinIndex { get; set; }
 
 
     private PlayerStateManager playerStateManager;
     private bool lastIsSeeker;
     private bool lastRoleAssigned;
     private int lastMaskColorIndex = -1;
+    private int lastSeekerSkinIndex = -1;
 
     private void Awake()
     {
@@ -42,11 +44,13 @@ public class PlayerRole : NetworkBehaviour
         }
 
         bool changed = lastRoleAssigned != RoleAssigned || lastIsSeeker != IsSeeker || lastMaskColorIndex != MaskColorIndex;
+        changed |= lastSeekerSkinIndex != SeekerSkinIndex;
         if (changed)
         {
             lastRoleAssigned = RoleAssigned;
             lastIsSeeker = IsSeeker;
             lastMaskColorIndex = MaskColorIndex;
+            lastSeekerSkinIndex = SeekerSkinIndex;
         }
     }
 
@@ -88,6 +92,7 @@ public class PlayerRole : NetworkBehaviour
 
         if (IsSeeker)
         {
+            SeekerSkinIndex = SeekerSkinSelection.LoadSelectedSkinIndex();
             MaskColorIndex = -1;
             if (MaskSeed == 0)
             {
@@ -203,6 +208,11 @@ public class PlayerRole : NetworkBehaviour
     public bool HasRoleAssigned()
     {
         return RoleAssigned;
+    }
+
+    public int GetSeekerSkinIndex()
+    {
+        return SeekerSkinIndex;
     }
 
     public int GetMaskColorIndex()
