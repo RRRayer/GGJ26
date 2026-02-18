@@ -1,1 +1,11 @@
+# Codex
 AGENTS.md
+
+# Antigravity
+.gemini/
+.agent/
+scripts/
+SyncManager/
+
+# Security
+.env
