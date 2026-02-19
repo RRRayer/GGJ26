@@ -60,7 +60,7 @@ public class FusionThirdPersonMotor : NetworkBehaviour
     private int lastDanceIndex = -1;
     private PlayerElimination elimination;
     // 다음 NPC 춤 명령을 내릴 수 있는 시간입니다.
-    private float nextNpcDanceCommandTime;
+    public float NextNpcDanceCommandTime { get; private set; }
     // DanceEventPublisher 인스턴스 참조입니다.
     private DanceEventPublisher danceEventPublisher;
     
@@ -184,9 +184,9 @@ public class FusionThirdPersonMotor : NetworkBehaviour
 
         bool lockMovement = GameManager.Instance != null && GameManager.Instance.IsGroupDanceActive;
         // Seeker NPC dance command (disabled during group dance).
-        if (lockMovement == false && input.npcDanceCommand && role != null && role.IsSeeker && Runner.SimulationTime >= nextNpcDanceCommandTime)
+        if (lockMovement == false && input.npcDanceCommand && role != null && role.IsSeeker && Runner.SimulationTime >= NextNpcDanceCommandTime)
         {
-            nextNpcDanceCommandTime = Runner.SimulationTime + NpcDanceCooldown;
+            NextNpcDanceCommandTime = Runner.SimulationTime + NpcDanceCooldown;
             // DanceEventPublisher가 없으면 씬에서 찾아 할당합니다.
             if (danceEventPublisher == null)
             {

@@ -3,9 +3,8 @@
 
 # Visual Studio cache directory
 .vs/
-Drilling/Drilling.slnx
-Drilling/Drilling.slnx
 
-# GEMINI
-.gemini/
+# Antigravity
 .agent/
+.gemini/
+scripts/
