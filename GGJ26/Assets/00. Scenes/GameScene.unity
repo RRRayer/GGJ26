@@ -604,6 +604,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gameScenePath: Assets/00. Scenes/GameScene.unity
   waitingRoomScenePath: Assets/00. Scenes/WaitingRoom.unity
+  ensureFusionVoiceClient: 1
+  voiceAutoConnectAndJoin: 0
+  voiceUseFusionAppSettings: 1
+  voiceUseFusionAuthValues: 1
 --- !u!114 &148525647
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -643,6 +647,12 @@ MonoBehaviour:
   spawnService: {fileID: 0}
   roleService: {fileID: 0}
   inputBridge: {fileID: 0}
+  enableVoiceInGameSceneOnly: 1
+  disconnectVoiceOutsideGameScene: 1
+  proximityMinDistance: 5
+  proximityMaxDistance: 30
+  voiceOutputMixerGroup: {fileID: 24300002, guid: d9084dee7259d2b43a99e89cd85b22c0, type: 2}
+  voiceSourceVolume: 1.7
 --- !u!4 &148525648
 Transform:
   m_ObjectHideFlags: 0

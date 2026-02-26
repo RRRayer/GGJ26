@@ -1392,6 +1392,55 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gameScenePath: Assets/00. Scenes/GameScene.unity
   waitingRoomScenePath: Assets/00. Scenes/WaitingRoom.unity
+  ensureFusionVoiceClient: 1
+  voiceAutoConnectAndJoin: 0
+  voiceUseFusionAppSettings: 1
+  voiceUseFusionAuthValues: 1
+--- !u!1 &1174268908
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1174268910}
+  - component: {fileID: 1174268909}
+  m_Layer: 0
+  m_Name: VoiceLogger
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1174268909
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1174268908}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a86f533fd9917dd4da8601e9eb542c96, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  LogLevel: 2
+--- !u!4 &1174268910
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1174268908}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1244417015
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2453,9 +2502,9 @@ MonoBehaviour:
   minPlayersToStart: 1
   autoStartOnAwake: 0
   sessionFlow: {fileID: 1097973356}
-  playerPrefab: {fileID: 3978347823390045238, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
-  seekerPrefab: {fileID: 3978347823390045238, guid: 702a0f3420f845d08995e734ff5dd4bd, type: 3}
-  normalPrefab: {fileID: 7063597009082458412, guid: 8ea9807e04484b249a2e00d3e60948a5, type: 3}
+  playerPrefab: {fileID: 3978347823390045238, guid: 86760590fd96a9740a46d739462e0c5f, type: 3}
+  seekerPrefab: {fileID: 3978347823390045238, guid: 924eee047529dbc4d864781c0fdf1fe9, type: 3}
+  normalPrefab: {fileID: 7063597009082458412, guid: 5520c10f7e992a444b9c5e0effdac535, type: 3}
   fallbackSpawnRadius: 4
   playerStateManager: {fileID: 5780521679406519432, guid: 302fb3a2e00a8fc4d910545cbeb7ddb8, type: 3}
   spawnAreaTag: SpawnArea
@@ -2476,6 +2525,12 @@ MonoBehaviour:
   spawnService: {fileID: 0}
   roleService: {fileID: 0}
   inputBridge: {fileID: 0}
+  enableVoiceInGameSceneOnly: 1
+  disconnectVoiceOutsideGameScene: 1
+  proximityMinDistance: 6
+  proximityMaxDistance: 40
+  voiceOutputMixerGroup: {fileID: 24300002, guid: d9084dee7259d2b43a99e89cd85b22c0, type: 2}
+  voiceSourceVolume: 1.728
 --- !u!1 &2104941839
 GameObject:
   m_ObjectHideFlags: 0
@@ -2599,3 +2654,4 @@ SceneRoots:
   - {fileID: 371226638}
   - {fileID: 3277762559824591028}
   - {fileID: 2104941841}
+  - {fileID: 1174268910}

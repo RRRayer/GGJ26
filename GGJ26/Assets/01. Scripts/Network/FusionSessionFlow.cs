@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Fusion;
+using Photon.Voice.Fusion;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -9,6 +10,12 @@ public class FusionSessionFlow : MonoBehaviour
     [Header("Session")]
     [SerializeField] private string gameScenePath = "Assets/00. Scenes/GameScene.unity";
     [SerializeField] private string waitingRoomScenePath = "Assets/00. Scenes/WaitingRoom.unity";
+
+    [Header("Voice")]
+    [SerializeField] private bool ensureFusionVoiceClient = true;
+    [SerializeField] private bool voiceAutoConnectAndJoin = false;
+    [SerializeField] private bool voiceUseFusionAppSettings = true;
+    [SerializeField] private bool voiceUseFusionAuthValues = true;
 
     public event Action<bool> MatchmakingStateChanged;
 
@@ -213,6 +220,25 @@ public class FusionSessionFlow : MonoBehaviour
         runner = runnerObject.AddComponent<NetworkRunner>();
         runner.ProvideInput = true;
         runnerObject.AddComponent<NetworkSceneManagerDefault>();
+        EnsureVoiceClient();
+    }
+
+    private void EnsureVoiceClient()
+    {
+        if (ensureFusionVoiceClient == false || runnerObject == null)
+        {
+            return;
+        }
+
+        var voiceClient = runnerObject.GetComponent<FusionVoiceClient>();
+        if (voiceClient == null)
+        {
+            voiceClient = runnerObject.AddComponent<FusionVoiceClient>();
+        }
+
+        voiceClient.AutoConnectAndJoin = voiceAutoConnectAndJoin;
+        voiceClient.UseFusionAppSettings = voiceUseFusionAppSettings;
+        voiceClient.UseFusionAuthValues = voiceUseFusionAuthValues;
     }
 
     private void RecreateRunner()

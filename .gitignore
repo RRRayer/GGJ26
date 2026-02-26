@@ -3,7 +3,7 @@
 
 # Visual Studio cache directory
 .vs/
-
+*_clone*/
 # Antigravity
 .agent/
 .gemini/
