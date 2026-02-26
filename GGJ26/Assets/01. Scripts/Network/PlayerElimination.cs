@@ -26,6 +26,7 @@ public class PlayerElimination : NetworkBehaviour
     private GameObject spectatorInstance;
     private float deathGroundSnapUntilTime;
     private float nextDeathGroundSnapTime;
+    private bool hasSpawned;
 
     private void Awake()
     {
@@ -66,6 +67,7 @@ public class PlayerElimination : NetworkBehaviour
 
     public override void Spawned()
     {
+        hasSpawned = true;
         if (playerStateManager == null)
         {
             playerStateManager = FindFirstObjectByType<PlayerStateManager>();
@@ -76,6 +78,11 @@ public class PlayerElimination : NetworkBehaviour
 
     public override void Render()
     {
+        if (CanAccessNetworkedState() == false)
+        {
+            return;
+        }
+
         if (lastEliminated != IsEliminated)
         {
             lastEliminated = IsEliminated;
@@ -144,7 +151,7 @@ public class PlayerElimination : NetworkBehaviour
 
     private void ApplyEliminatedState()
     {
-        bool eliminated = IsEliminated;
+        bool eliminated = CanAccessNetworkedState() && IsEliminated;
 
         if (motor != null)
         {
@@ -267,6 +274,11 @@ public class PlayerElimination : NetworkBehaviour
 
     private void LateUpdate()
     {
+        if (CanAccessNetworkedState() == false)
+        {
+            return;
+        }
+
         if (IsEliminated == false)
         {
             return;
@@ -300,5 +312,10 @@ public class PlayerElimination : NetworkBehaviour
         }
 
         return false;
+    }
+
+    private bool CanAccessNetworkedState()
+    {
+        return hasSpawned && Object != null && Runner != null;
     }
 }

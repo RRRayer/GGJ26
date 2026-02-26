@@ -138,6 +138,37 @@ public class FusionSessionFlow : MonoBehaviour
         return true;
     }
 
+    public async Task<bool> JoinSessionLobbyAsync()
+    {
+        if (isStarting)
+        {
+            return false;
+        }
+
+        EnsureRunner();
+        if (runner == null)
+        {
+            return false;
+        }
+
+        // Already inside a game session: keep current state.
+        if (runner.IsRunning && runner.SessionInfo.IsValid)
+        {
+            return false;
+        }
+
+        try
+        {
+            await runner.JoinSessionLobby(SessionLobby.Shared);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning($"[FusionSessionFlow] JoinSessionLobby failed: {ex.Message}");
+            return false;
+        }
+    }
+
     public void StartGameScene()
     {
         if (runner == null || runner.IsRunning == false)

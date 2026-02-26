@@ -60,15 +60,18 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
     [SerializeField] private float voiceSourceVolume = 1f;
 
     public event Action<bool> MatchmakingStateChanged;
+    public event Action<IReadOnlyList<SessionInfo>> SessionListUpdated;
     public bool IsMatchmaking => sessionFlow != null && sessionFlow.IsMatchmaking;
     public int MaxPlayers => maxPlayers;
     public int MinPlayersToStart => minPlayersToStart;
     public bool IsHost => sessionFlow != null && sessionFlow.IsHost;
     public bool IsInRoom => sessionFlow != null && sessionFlow.IsInRoom;
+    public IReadOnlyList<SessionInfo> CachedSessionList => cachedSessionList;
 
     private NetworkRunner runner;
     private bool callbacksRegistered;
     private string lastScenePath;
+    private readonly List<SessionInfo> cachedSessionList = new List<SessionInfo>();
     private float nextVoiceProfileApplyTime;
     private bool warnedMissingVoiceAppId;
 
@@ -195,6 +198,8 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
             return;
         }
 
+        Debug.Log($"[FusionLauncher] StartMatchmaking request: room='{roomName}', maxPlayers={maxPlayers}");
+
         this.maxPlayers = maxPlayers;
         if (spawnService != null)
         {
@@ -204,6 +209,7 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
         bool ok = await sessionFlow.StartSessionAsync(roomName, maxPlayers);
         if (ok == false)
         {
+            Debug.LogWarning($"[FusionLauncher] StartMatchmaking failed: room='{roomName}'");
             return;
         }
 
@@ -243,25 +249,28 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
 
     private void TryBindRunner()
     {
-        if (sessionFlow != null && sessionFlow.Runner != null && sessionFlow.Runner.IsRunning)
+        if (sessionFlow != null && sessionFlow.Runner != null)
         {
             runner = sessionFlow.Runner;
             RegisterCallbacks(runner);
-            if (spawnService != null)
+            if (runner.IsRunning && spawnService != null)
             {
                 spawnService.BindRunner(runner);
             }
-            return;
+            if (runner.IsRunning)
+            {
+                return;
+            }
         }
 
         var existing = FindFirstObjectByType<NetworkRunner>();
-        if (existing != null && existing.IsRunning)
+        if (existing != null)
         {
             runner = existing;
             RegisterCallbacks(runner);
-            if (spawnService != null)
+            if (existing.IsRunning && spawnService != null)
             {
-                spawnService.BindRunner(runner);
+                spawnService.BindRunner(existing);
             }
         }
     }
@@ -351,7 +360,17 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
     public void OnConnectRequest(NetworkRunner runner, NetworkRunnerCallbackArgs.ConnectRequest request, byte[] token) { }
     public void OnConnectFailed(NetworkRunner runner, NetAddress remoteAddress, NetConnectFailedReason reason) { }
     public void OnUserSimulationMessage(NetworkRunner runner, SimulationMessagePtr message) { }
-    public void OnSessionListUpdated(NetworkRunner runner, List<SessionInfo> sessionList) { }
+    public void OnSessionListUpdated(NetworkRunner runner, List<SessionInfo> sessionList)
+    {
+        cachedSessionList.Clear();
+        if (sessionList != null)
+        {
+            cachedSessionList.AddRange(sessionList);
+        }
+
+        Debug.Log($"[FusionLauncher] OnSessionListUpdated: {cachedSessionList.Count} sessions");
+        SessionListUpdated?.Invoke(cachedSessionList);
+    }
     public void OnCustomAuthenticationResponse(NetworkRunner runner, Dictionary<string, object> data) { }
     public void OnHostMigration(NetworkRunner runner, HostMigrationToken hostMigrationToken) { }
     public void OnReliableDataReceived(NetworkRunner runner, PlayerRef player, ReliableKey key, ArraySegment<byte> data) { }
@@ -402,6 +421,24 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
         }
     }
 
+    public async void RequestSessionListRefresh()
+    {
+        if (sessionFlow == null)
+        {
+            return;
+        }
+
+        TryBindRunner();
+        Debug.Log("[FusionLauncher] Requesting session lobby join for public room list.");
+        bool joined = await sessionFlow.JoinSessionLobbyAsync();
+        TryBindRunner();
+
+        if (joined == false)
+        {
+            Debug.Log("[FusionLauncher] Session lobby join skipped or failed. Using cached session list.");
+        }
+    }
+
     private void ApplyVoiceModeForScene(bool isGameScene)
     {
         if (enableVoiceInGameSceneOnly == false)
@@ -424,11 +461,12 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
                     warnedMissingVoiceAppId = true;
                     Debug.LogError("[FusionLauncher] Voice AppId is missing. Set AppIdVoice in Fusion PhotonAppSettings.");
                 }
+
                 return;
             }
 
             warnedMissingVoiceAppId = false;
-            if (voiceClient.ClientState == ClientState.Disconnected || voiceClient.ClientState == ClientState.PeerCreated)
+            if (voiceClient.ClientState == Photon.Realtime.ClientState.Disconnected || voiceClient.ClientState == Photon.Realtime.ClientState.PeerCreated)
             {
                 voiceClient.ConnectAndJoinRoom();
             }
@@ -439,7 +477,7 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
 
         if (disconnectVoiceOutsideGameScene)
         {
-            if (voiceClient.ClientState != ClientState.Disconnected && voiceClient.ClientState != ClientState.Disconnecting)
+            if (voiceClient.ClientState != Photon.Realtime.ClientState.Disconnected && voiceClient.ClientState != Photon.Realtime.ClientState.Disconnecting)
             {
                 voiceClient.Disconnect();
             }
@@ -451,7 +489,7 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
         var voiceClient = FindFirstObjectByType<FusionVoiceClient>();
         if (voiceClient != null)
         {
-            if (voiceClient.ClientState != ClientState.Disconnected && voiceClient.ClientState != ClientState.Disconnecting)
+            if (voiceClient.ClientState != Photon.Realtime.ClientState.Disconnected && voiceClient.ClientState != Photon.Realtime.ClientState.Disconnecting)
             {
                 voiceClient.Disconnect();
             }

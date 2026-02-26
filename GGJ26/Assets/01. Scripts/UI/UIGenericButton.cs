@@ -12,11 +12,20 @@ public class UIGenericButton : MonoBehaviour
 
     public void Click()
     {
+        if (Clicked == null)
+        {
+            Debug.LogWarning($"[UIGenericButton] Clicked listener is not assigned on {name}.", this);
+            return;
+        }
+
         Clicked.Invoke();
     }
 
     public void SetButton(string newText)
     {
-        buttonText.text = newText;
+        if (buttonText != null)
+        {
+            buttonText.text = newText;
+        }
     }
 }
