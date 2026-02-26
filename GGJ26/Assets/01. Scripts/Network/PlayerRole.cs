@@ -4,22 +4,17 @@ using UnityEngine;
 
 public class PlayerRole : NetworkBehaviour
 {
-    [SerializeField] private bool enableDebugLogs = true;
-
     [Networked] public NetworkBool IsSeeker { get; private set; }
     [Networked] private NetworkBool RoleAssigned { get; set; }
     [Networked] private int MaskColorIndex { get; set; }
     [Networked] private NetworkBool MaskAssigned { get; set; }
     [Networked] private int MaskSeed { get; set; }
-    [Networked] private int SeekerSkinIndex { get; set; }
 
 
     private PlayerStateManager playerStateManager;
     private bool lastIsSeeker;
     private bool lastRoleAssigned;
     private int lastMaskColorIndex = -1;
-    private int lastSeekerSkinIndex = -1;
-    private bool localSeekerSkinSyncDone;
 
     private void Awake()
     {
@@ -37,8 +32,6 @@ public class PlayerRole : NetworkBehaviour
         {
             TryAssignRole();
         }
-
-        TrySyncLocalSeekerSkinPreference();
     }
 
     public override void Render()
@@ -49,13 +42,11 @@ public class PlayerRole : NetworkBehaviour
         }
 
         bool changed = lastRoleAssigned != RoleAssigned || lastIsSeeker != IsSeeker || lastMaskColorIndex != MaskColorIndex;
-        changed |= lastSeekerSkinIndex != SeekerSkinIndex;
         if (changed)
         {
             lastRoleAssigned = RoleAssigned;
             lastIsSeeker = IsSeeker;
             lastMaskColorIndex = MaskColorIndex;
-            lastSeekerSkinIndex = SeekerSkinIndex;
         }
     }
 
@@ -97,7 +88,6 @@ public class PlayerRole : NetworkBehaviour
 
         if (IsSeeker)
         {
-            SeekerSkinIndex = SeekerSkinSelection.LoadSelectedSkinIndex();
             MaskColorIndex = -1;
             if (MaskSeed == 0)
             {
@@ -212,17 +202,12 @@ public class PlayerRole : NetworkBehaviour
 
     public bool HasRoleAssigned()
     {
-        return CanAccessNetworkedState() && RoleAssigned;
-    }
-
-    public int GetSeekerSkinIndex()
-    {
-        return CanAccessNetworkedState() ? SeekerSkinIndex : 0;
+        return RoleAssigned;
     }
 
     public int GetMaskColorIndex()
     {
-        return CanAccessNetworkedState() ? MaskColorIndex : 0;
+        return MaskColorIndex;
     }
 
     public bool TrySetMaskColorIndex(int newIndex)
@@ -240,62 +225,6 @@ public class PlayerRole : NetworkBehaviour
         MaskColorIndex = newIndex;
         MaskAssigned = true;
         return true;
-    }
-
-    public bool TrySetSeekerSkinIndex(int newIndex)
-    {
-        if (CanAccessNetworkedState() == false || Object.HasStateAuthority == false)
-        {
-            if (enableDebugLogs)
-            {
-                Debug.Log($"[PlayerRole] TrySetSeekerSkinIndex rejected on {name}: canAccess={CanAccessNetworkedState()}, hasStateAuth={(Object != null && Object.HasStateAuthority)}");
-            }
-            return false;
-        }
-
-        if (IsSeeker == false)
-        {
-            if (enableDebugLogs)
-            {
-                Debug.Log($"[PlayerRole] TrySetSeekerSkinIndex rejected on {name}: not seeker.");
-            }
-            return false;
-        }
-
-        SeekerSkinIndex = Mathf.Max(0, newIndex);
-        if (enableDebugLogs)
-        {
-            Debug.Log($"[PlayerRole] SeekerSkinIndex set on {name}: {SeekerSkinIndex}");
-        }
-        return true;
-    }
-
-    public void RequestSeekerSkinChange(int newIndex)
-    {
-        if (CanAccessNetworkedState() == false || IsSeeker == false)
-        {
-            if (enableDebugLogs)
-            {
-                Debug.Log($"[PlayerRole] RequestSeekerSkinChange ignored on {name}: canAccess={CanAccessNetworkedState()}, isSeeker={IsSeeker}");
-            }
-            return;
-        }
-
-        if (Object.HasStateAuthority)
-        {
-            if (enableDebugLogs)
-            {
-                Debug.Log($"[PlayerRole] RequestSeekerSkinChange direct apply on {name}: {newIndex}");
-            }
-            TrySetSeekerSkinIndex(newIndex);
-            return;
-        }
-
-        if (enableDebugLogs)
-        {
-            Debug.Log($"[PlayerRole] RequestSeekerSkinChange RPC on {name}: {newIndex}");
-        }
-        RpcRequestSetSeekerSkinIndex(Mathf.Max(0, newIndex));
     }
 
     public void RequestMaskColorChange(int newIndex)
@@ -324,57 +253,5 @@ public class PlayerRole : NetworkBehaviour
 
         MaskColorIndex = newIndex;
         MaskAssigned = true;
-    }
-
-    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
-    private void RpcRequestSetSeekerSkinIndex(int newIndex)
-    {
-        if (IsSeeker == false)
-        {
-            if (enableDebugLogs)
-            {
-                Debug.Log($"[PlayerRole] RpcRequestSetSeekerSkinIndex ignored on {name}: not seeker.");
-            }
-            return;
-        }
-
-        SeekerSkinIndex = Mathf.Max(0, newIndex);
-        if (enableDebugLogs)
-        {
-            Debug.Log($"[PlayerRole] RpcRequestSetSeekerSkinIndex applied on {name}: {SeekerSkinIndex}");
-        }
-    }
-
-    private void TrySyncLocalSeekerSkinPreference()
-    {
-        if (CanAccessNetworkedState() == false || Object.HasInputAuthority == false)
-        {
-            return;
-        }
-
-        if (RoleAssigned == false || IsSeeker == false)
-        {
-            localSeekerSkinSyncDone = false;
-            return;
-        }
-
-        if (localSeekerSkinSyncDone)
-        {
-            return;
-        }
-
-        int savedIndex = SeekerSkinSelection.LoadSelectedSkinIndex();
-        RequestSeekerSkinChange(savedIndex);
-        localSeekerSkinSyncDone = true;
-
-        if (enableDebugLogs)
-        {
-            Debug.Log($"[PlayerRole] Synced saved seeker skin on spawn/assign. savedIndex={savedIndex}, object={name}");
-        }
-    }
-
-    private bool CanAccessNetworkedState()
-    {
-        return Object != null && Object.IsValid;
     }
 }

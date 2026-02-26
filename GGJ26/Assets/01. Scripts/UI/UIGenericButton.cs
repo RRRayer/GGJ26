@@ -12,7 +12,7 @@ public class UIGenericButton : MonoBehaviour
 
     public void Click()
     {
-        Clicked?.Invoke();
+        Clicked.Invoke();
     }
 
     public void SetButton(string newText)

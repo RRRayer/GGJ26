@@ -47,18 +47,15 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
     [SerializeField] private FusionInputBridge inputBridge;
 
     public event Action<bool> MatchmakingStateChanged;
-    public event Action<IReadOnlyList<SessionInfo>> SessionListUpdated;
     public bool IsMatchmaking => sessionFlow != null && sessionFlow.IsMatchmaking;
     public int MaxPlayers => maxPlayers;
     public int MinPlayersToStart => minPlayersToStart;
     public bool IsHost => sessionFlow != null && sessionFlow.IsHost;
     public bool IsInRoom => sessionFlow != null && sessionFlow.IsInRoom;
-    public IReadOnlyList<SessionInfo> CachedSessionList => cachedSessionList;
 
     private NetworkRunner runner;
     private bool callbacksRegistered;
     private string lastScenePath;
-    private readonly List<SessionInfo> cachedSessionList = new List<SessionInfo>();
 
     private void Awake()
     {
@@ -177,8 +174,6 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
             return;
         }
 
-        Debug.Log($"[FusionLauncher] StartMatchmaking request: room='{roomName}', maxPlayers={maxPlayers}");
-
         this.maxPlayers = maxPlayers;
         if (spawnService != null)
         {
@@ -188,7 +183,6 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
         bool ok = await sessionFlow.StartSessionAsync(roomName, maxPlayers);
         if (ok == false)
         {
-            Debug.LogWarning($"[FusionLauncher] StartMatchmaking failed: room='{roomName}'");
             return;
         }
 
@@ -228,28 +222,25 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
 
     private void TryBindRunner()
     {
-        if (sessionFlow != null && sessionFlow.Runner != null)
+        if (sessionFlow != null && sessionFlow.Runner != null && sessionFlow.Runner.IsRunning)
         {
             runner = sessionFlow.Runner;
             RegisterCallbacks(runner);
-            if (runner.IsRunning && spawnService != null)
+            if (spawnService != null)
             {
                 spawnService.BindRunner(runner);
             }
-            if (runner.IsRunning)
-            {
-                return;
-            }
+            return;
         }
 
         var existing = FindFirstObjectByType<NetworkRunner>();
-        if (existing != null)
+        if (existing != null && existing.IsRunning)
         {
             runner = existing;
             RegisterCallbacks(runner);
-            if (existing.IsRunning && spawnService != null)
+            if (spawnService != null)
             {
-                spawnService.BindRunner(existing);
+                spawnService.BindRunner(runner);
             }
         }
     }
@@ -336,17 +327,7 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
     public void OnConnectRequest(NetworkRunner runner, NetworkRunnerCallbackArgs.ConnectRequest request, byte[] token) { }
     public void OnConnectFailed(NetworkRunner runner, NetAddress remoteAddress, NetConnectFailedReason reason) { }
     public void OnUserSimulationMessage(NetworkRunner runner, SimulationMessagePtr message) { }
-    public void OnSessionListUpdated(NetworkRunner runner, List<SessionInfo> sessionList)
-    {
-        cachedSessionList.Clear();
-        if (sessionList != null)
-        {
-            cachedSessionList.AddRange(sessionList);
-        }
-
-        Debug.Log($"[FusionLauncher] OnSessionListUpdated: {cachedSessionList.Count} sessions");
-        SessionListUpdated?.Invoke(cachedSessionList);
-    }
+    public void OnSessionListUpdated(NetworkRunner runner, List<SessionInfo> sessionList) { }
     public void OnCustomAuthenticationResponse(NetworkRunner runner, Dictionary<string, object> data) { }
     public void OnHostMigration(NetworkRunner runner, HostMigrationToken hostMigrationToken) { }
     public void OnReliableDataReceived(NetworkRunner runner, PlayerRef player, ReliableKey key, ArraySegment<byte> data) { }
@@ -393,24 +374,6 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
         if (sessionFlow != null)
         {
             sessionFlow.StartGameScene();
-        }
-    }
-
-    public async void RequestSessionListRefresh()
-    {
-        if (sessionFlow == null)
-        {
-            return;
-        }
-
-        TryBindRunner();
-        Debug.Log("[FusionLauncher] Requesting session lobby join for public room list.");
-        bool joined = await sessionFlow.JoinSessionLobbyAsync();
-        TryBindRunner();
-
-        if (joined == false)
-        {
-            Debug.Log("[FusionLauncher] Session lobby join skipped or failed. Using cached session list.");
         }
     }
 }
