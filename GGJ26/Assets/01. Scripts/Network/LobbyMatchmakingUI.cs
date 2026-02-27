@@ -1,4 +1,4 @@
-using TMPro;
+﻿using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -32,6 +32,7 @@ public class LobbyMatchmakingUI : MonoBehaviour
 
     [Header("Room UI")]
     [SerializeField] private GameObject roomPanel;
+    [SerializeField] private TextMeshProUGUI roomPanelTitleText;
     [SerializeField] private TMP_InputField roomNameInput;
     [SerializeField] private TMP_InputField roomPasswordInput;
     [SerializeField] private Button roomCloseButton;
@@ -413,6 +414,12 @@ private void StartMatchmakingWithInputs(bool isCreateRoom)
             return;
         }
 
+        if (isCreateRoom && HasRoomNameConflict(room))
+        {
+            ShowPopup("A room with the same name already exists.");
+            return;
+        }
+
         string sessionName = BuildSessionName(room, hasPassword ? password : string.Empty);
 
         int requestedMaxPlayers = isCreateRoom
@@ -521,6 +528,11 @@ private void StartMatchmakingWithInputs(bool isCreateRoom)
 private void SetRoomPanelMode(bool createMode)
     {
         roomPanelCreateMode = createMode;
+
+        if (roomPanelTitleText != null)
+        {
+            roomPanelTitleText.text = createMode ? "Create Room" : "Join Room";
+        }
 
         if (createRoomButton != null)
         {
@@ -745,7 +757,7 @@ private void SetRoomPanelMode(bool createMode)
         if (roomPanel == null)
         {
             roomPanel = CreatePanel(canvas.transform, "RoomPanel", new Vector2(560f, 360f));
-            CreateText(roomPanel.transform, "RoomTitle", "Create Room / Join Room", 30, new Vector2(0.5f, 0.85f));
+            roomPanelTitleText = CreateText(roomPanel.transform, "RoomTitle", "Create Room", 30, new Vector2(0.5f, 0.85f));
             roomNameInput = CreateInputField(roomPanel.transform, "RoomNameInput", "Room Name", new Vector2(0.5f, 0.62f));
             modeValueText = CreateText(roomPanel.transform, "ModeValueText", "Classic", 24, new Vector2(0.5f, 0.5f));
             modeToggleButton = CreateButton(roomPanel.transform, "ModeToggleButton", "Toggle Mode", new Vector2(0.5f, 0.5f));
@@ -777,6 +789,11 @@ private void SetRoomPanelMode(bool createMode)
         if (roomPanel == null)
         {
             return;
+        }
+
+        if (roomPanelTitleText == null)
+        {
+            roomPanelTitleText = FindChildComponentByName<TextMeshProUGUI>(roomPanel.transform, "RoomTitle");
         }
 
         if (roomNameInput == null)
@@ -994,7 +1011,12 @@ private void SetRoomPanelMode(bool createMode)
     private void OpenDirectJoinFromPublic()
     {
         ShowPublicRoomPanel(false);
-        OpenHostCreateRoomPopup();
+        ShowNicknamePanel(false);
+        roomPanelCreateMode = false;
+        ShowRoomPanel(true);
+        SetRoomPanelMode(false);
+        UpdatePasswordVisibility();
+        FocusRoomInput();
     }
 
     private void RefreshPublicRoomList()
@@ -1235,14 +1257,14 @@ private void RefreshRoomModeUi()
     {
         if (modeValueText != null)
         {
-            modeValueText.text = selectedRoomMode == RoomMode.Classic ? "클래식 모드" : "너구리 모드";
+            modeValueText.text = selectedRoomMode == RoomMode.Classic ? "클래식 모드" : "데스매치 모드";
         }
 
         if (modeDescriptionText != null)
         {
             modeDescriptionText.text = selectedRoomMode == RoomMode.Classic
                 ? "클래식 모드는 일반 플레이어는 술래를 피해 달아나고, 술래는 모든 일반 플레이어를 잡는 모드입니다."
-                : "너구리 모드는 특수 규칙으로 진행되는 이벤트 모드입니다.";
+                : "데스매치 모드는 특수 규칙으로 진행되는 이벤트 모드입니다.";
         }
     }
 
@@ -1315,6 +1337,53 @@ private void UpdatePasswordVisibility()
         {
             FocusRoomInput();
         }
+    }
+
+    private bool HasRoomNameConflict(string roomName)
+    {
+        if (launcher == null || string.IsNullOrWhiteSpace(roomName))
+        {
+            return false;
+        }
+
+        var sessions = launcher.CachedSessionList;
+        if (sessions == null)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < sessions.Count; i++)
+        {
+            string existingSessionName = sessions[i].Name;
+            if (string.IsNullOrWhiteSpace(existingSessionName))
+            {
+                continue;
+            }
+
+            string existingBaseName = ExtractBaseRoomName(existingSessionName);
+            if (string.Equals(existingBaseName, roomName, System.StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static string ExtractBaseRoomName(string sessionName)
+    {
+        if (string.IsNullOrEmpty(sessionName))
+        {
+            return string.Empty;
+        }
+
+        int separator = sessionName.IndexOf(PrivateRoomSeparator, System.StringComparison.Ordinal);
+        if (separator <= 0)
+        {
+            return sessionName.Trim();
+        }
+
+        return sessionName.Substring(0, separator).Trim();
     }
 
     private void EnsureEventSystem()
