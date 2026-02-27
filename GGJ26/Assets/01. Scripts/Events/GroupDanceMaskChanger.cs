@@ -108,7 +108,23 @@ public class GroupDanceMaskChanger : MonoBehaviour
 
         if (valid.Count == 0)
         {
-            Debug.Log("[GroupDanceMaskChanger] No valid permutation found; using +1 fallback.", this);
+            // Relax "all unique" constraint but keep:
+            // 1) each player must change color
+            // 2) not everyone ends up in the same color
+            var relaxedCandidates = GetReassignmentCandidates(currentColors);
+            if (relaxedCandidates.Count > 0)
+            {
+                var chosenRelaxed = relaxedCandidates[Random.Range(0, relaxedCandidates.Count)];
+                Debug.Log($"[GroupDanceMaskChanger] Using relaxed candidate: {string.Join(",", chosenRelaxed)}", this);
+                for (int i = 0; i < count; i++)
+                {
+                    Debug.Log($"[GroupDanceMaskChanger] Relaxed mask {currentColors[i]} -> {chosenRelaxed[i]}", players[i]);
+                    players[i].RequestMaskColorChange(chosenRelaxed[i]);
+                }
+                return;
+            }
+
+            Debug.Log("[GroupDanceMaskChanger] No relaxed candidate found; using +1 fallback.", this);
             for (int i = 0; i < count; i++)
             {
                 int current = currentColors[i];
@@ -126,6 +142,65 @@ public class GroupDanceMaskChanger : MonoBehaviour
             Debug.Log($"[GroupDanceMaskChanger] Player {i} mask {currentColors[i]} -> {chosen[i]}", players[i]);
             players[i].RequestMaskColorChange(chosen[i]);
         }
+    }
+
+    private List<int[]> GetReassignmentCandidates(int[] currentColors)
+    {
+        var results = new List<int[]>();
+        int count = currentColors.Length;
+        var current = new int[count];
+
+        void Dfs(int depth)
+        {
+            if (depth == count)
+            {
+                if (count > 1 && IsAllSame(current))
+                {
+                    return;
+                }
+
+                var arr = new int[count];
+                for (int i = 0; i < count; i++)
+                {
+                    arr[i] = current[i];
+                }
+                results.Add(arr);
+                return;
+            }
+
+            for (int color = 0; color < 3; color++)
+            {
+                if (color == currentColors[depth])
+                {
+                    continue;
+                }
+
+                current[depth] = color;
+                Dfs(depth + 1);
+            }
+        }
+
+        Dfs(0);
+        return results;
+    }
+
+    private static bool IsAllSame(int[] values)
+    {
+        if (values == null || values.Length <= 1)
+        {
+            return true;
+        }
+
+        int first = values[0];
+        for (int i = 1; i < values.Length; i++)
+        {
+            if (values[i] != first)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private List<int[]> GetPermutations(int[] colors, int length)
