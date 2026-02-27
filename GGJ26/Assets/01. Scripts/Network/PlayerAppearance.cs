@@ -1,5 +1,4 @@
 using UnityEngine;
-using System.Threading.Tasks;
 
 public class PlayerAppearance : MonoBehaviour
 {
@@ -30,6 +29,8 @@ public class PlayerAppearance : MonoBehaviour
     [SerializeField] private AudioCueEventChannelSO sfxEventChannel;
     [SerializeField] private AudioConfigurationSO sfxConfiguration;
     [SerializeField] private AudioCueSO maskChangeSfxCue;
+    [Header("Mask Change Firework (optional)")]
+    [SerializeField] private float fireworkSpawnYOffset = -0.6f;
 
     private bool lastIsSeeker;
     private int lastMaskIndex = -2;
@@ -70,19 +71,8 @@ public class PlayerAppearance : MonoBehaviour
         }
     }
 
-    private async void OnStopDiscoRequested()
+    private void OnStopDiscoRequested()
     {
-        if (maskEffectPrefab == null || effectSpawnPoint == null)
-        {
-            confirmStopDiscoEvent?.RaiseEvent();
-            return;
-        }
-
-        // 연출용 마스크 생성 및 애니메이션 재생, 그리고 끝날 때까지 대기
-        MaskEffect effectInstance = Instantiate(maskEffectPrefab, effectSpawnPoint.position, effectSpawnPoint.rotation, effectSpawnPoint);
-        await effectInstance.PlayEffectSequence();
-        
-        // 연출이 끝났으므로, 디스코볼이 종료되어도 좋다는 '확정' 신호를 보냄
         confirmStopDiscoEvent?.RaiseEvent();
     }
 
@@ -115,6 +105,7 @@ public class PlayerAppearance : MonoBehaviour
             ApplyMaskVisual(maskIndex);
             if (hasInitializedMask)
             {
+                PlayMaskChangeFirework(maskIndex);
                 PlayMaskChangeSfx();
             }
             else
@@ -208,6 +199,71 @@ public class PlayerAppearance : MonoBehaviour
         sfxEventChannel.RaisePlayEvent(maskChangeSfxCue, sfxConfiguration, transform.position);
     }
 
+    private void PlayMaskChangeFirework(int maskIndex)
+    {
+        if (maskEffectPrefab == null || effectSpawnPoint == null)
+        {
+            return;
+        }
+
+        Vector3 spawnPosition = effectSpawnPoint.position + Vector3.up * fireworkSpawnYOffset;
+        MaskEffect effectInstance = Instantiate(maskEffectPrefab, spawnPosition, effectSpawnPoint.rotation);
+        Gradient gradient = GetFireworkGradient(maskIndex);
+        effectInstance.SetFireworkColor(GetFireworkColor(maskIndex));
+        if (gradient != null)
+        {
+            effectInstance.SetFireworkGradient(gradient);
+        }
+
+        _ = effectInstance.PlayEffectSequence();
+    }
+
+    private Gradient GetFireworkGradient(int maskIndex)
+    {
+        switch (maskIndex)
+        {
+            case 0:
+                return CreateTwoKeyGradient(new Color(1f, 0.2f, 0.2f, 1f), new Color(0.7f, 0.05f, 0.05f, 1f));
+            case 1:
+                return CreateTwoKeyGradient(new Color(0.2f, 0.45f, 1f, 1f), new Color(0.05f, 0.2f, 0.7f, 1f));
+            case 2:
+                return CreateTwoKeyGradient(new Color(0.25f, 1f, 0.25f, 1f), new Color(0.08f, 0.7f, 0.12f, 1f));
+            default:
+                return null;
+        }
+    }
+
+    private static Gradient CreateTwoKeyGradient(Color start, Color end)
+    {
+        Gradient gradient = new Gradient();
+        gradient.SetKeys(
+            new[]
+            {
+                new GradientColorKey(start, 0f),
+                new GradientColorKey(end, 1f)
+            },
+            new[]
+            {
+                new GradientAlphaKey(1f, 0f),
+                new GradientAlphaKey(1f, 1f)
+            });
+        return gradient;
+    }
+
+    private static Color GetFireworkColor(int maskIndex)
+    {
+        switch (maskIndex)
+        {
+            case 0:
+                return new Color(1f, 0.2f, 0.2f, 1f);
+            case 1:
+                return new Color(0.2f, 0.45f, 1f, 1f);
+            case 2:
+                return new Color(0.25f, 1f, 0.25f, 1f);
+            default:
+                return Color.white;
+        }
+    }
     private void AutoAssignMaskObjects()
     {
         if (maskObjects == null || maskObjects.Length < 3)
