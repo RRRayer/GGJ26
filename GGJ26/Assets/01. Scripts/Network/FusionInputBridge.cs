@@ -1,9 +1,31 @@
-using Fusion;
+﻿using Fusion;
 using StarterAssets;
 using UnityEngine;
 
 public class FusionInputBridge : MonoBehaviour
 {
+    private bool pendingSabotageArm1;
+    private bool pendingSabotageArm2;
+    private bool pendingSabotageArm3;
+    private bool pendingSabotageExecute;
+
+    private void Update()
+    {
+        var keyboard = UnityEngine.InputSystem.Keyboard.current;
+        if (keyboard != null)
+        {
+            if (keyboard.digit1Key.wasPressedThisFrame) pendingSabotageArm1 = true;
+            if (keyboard.digit2Key.wasPressedThisFrame) pendingSabotageArm2 = true;
+            if (keyboard.digit3Key.wasPressedThisFrame) pendingSabotageArm3 = true;
+        }
+
+        var mouse = UnityEngine.InputSystem.Mouse.current;
+        if (mouse != null && mouse.leftButton.wasPressedThisFrame)
+        {
+            pendingSabotageExecute = true;
+        }
+    }
+
     public void BuildInput(NetworkRunner runner, NetworkInput input)
     {
         if (runner == null || runner.IsRunning == false)
@@ -36,15 +58,19 @@ public class FusionInputBridge : MonoBehaviour
             data.Jump = inputs.jump;
             data.Sprint = inputs.sprint;
             data.danceIndex = GetDanceIndex(inputs, playerInput);
-            // NPC 춤 명령 입력을 설정합니다.
             data.npcDanceCommand = GetNpcDanceCommand(playerInput);
         }
         else
         {
             data.danceIndex = -1;
-            // NPC 춤 명령 입력을 설정합니다.
             data.npcDanceCommand = GetNpcDanceCommand(playerInput);
         }
+
+        // Use pending one-shot flags only to avoid duplicate presses across multiple Fusion ticks in one frame.
+        data.sabotageArm1 = ConsumePending(ref pendingSabotageArm1);
+        data.sabotageArm2 = ConsumePending(ref pendingSabotageArm2);
+        data.sabotageArm3 = ConsumePending(ref pendingSabotageArm3);
+        data.sabotageExecute = ConsumePending(ref pendingSabotageExecute);
 
         input.Set(data);
 
@@ -129,10 +155,6 @@ public class FusionInputBridge : MonoBehaviour
         return false;
     }
 
-    /// <summary>
-    /// NPC 춤 명령 입력을 감지합니다.
-    /// 특정 액션이나 'E' 키 입력을 확인합니다.
-    /// </summary>
     private bool GetNpcDanceCommand(UnityEngine.InputSystem.PlayerInput playerInput)
     {
         if (playerInput != null && playerInput.actions != null)
@@ -151,9 +173,53 @@ public class FusionInputBridge : MonoBehaviour
         return keyboard.eKey.wasPressedThisFrame;
     }
 
-    /// <summary>
-    /// PlayerInput의 모든 액션 맵에서 특정 액션이 눌렸는지 확인합니다.
-    /// </summary>
+    private bool GetSabotageArmPressed(UnityEngine.InputSystem.PlayerInput playerInput, int slot)
+    {
+        if (playerInput != null && playerInput.actions != null)
+        {
+            if (WasPressedAnyMap(playerInput, $"Sabotage{slot}")) return true;
+            if (WasPressedAnyMap(playerInput, $"SabotageArm{slot}")) return true;
+        }
+
+        var keyboard = UnityEngine.InputSystem.Keyboard.current;
+        if (keyboard == null)
+        {
+            return false;
+        }
+
+        return slot switch
+        {
+            1 => keyboard.digit1Key.wasPressedThisFrame,
+            2 => keyboard.digit2Key.wasPressedThisFrame,
+            3 => keyboard.digit3Key.wasPressedThisFrame,
+            _ => false
+        };
+    }
+
+    private bool GetSabotageExecutePressed(UnityEngine.InputSystem.PlayerInput playerInput)
+    {
+        if (playerInput != null && playerInput.actions != null)
+        {
+            if (WasPressedAnyMap(playerInput, "SabotageExecute")) return true;
+            if (WasPressedAnyMap(playerInput, "Fire")) return true;
+            if (WasPressedAnyMap(playerInput, "Shoot")) return true;
+        }
+
+        var mouse = UnityEngine.InputSystem.Mouse.current;
+        return mouse != null && mouse.leftButton.wasPressedThisFrame;
+    }
+
+    private static bool ConsumePending(ref bool flag)
+    {
+        if (flag == false)
+        {
+            return false;
+        }
+
+        flag = false;
+        return true;
+    }
+
     private bool WasPressedAnyMap(UnityEngine.InputSystem.PlayerInput playerInput, string actionName)
     {
         var actions = playerInput.actions;

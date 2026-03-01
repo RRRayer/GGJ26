@@ -32,6 +32,9 @@ public class StunGun : NetworkBehaviour
     [SerializeField] private AudioCueSO hitSfxCue;
     [Header("UI Cooldown")]
     private Image cooldownImage;
+    [SerializeField] private float sharedCrosshairSize = 18f;
+    [SerializeField] private float sharedCrosshairThickness = 2f;
+    [SerializeField] private Color sharedCrosshairColor = Color.white;
 
     private PlayerRole role;
     private float lastFireTime = -999f;
@@ -47,6 +50,7 @@ public class StunGun : NetworkBehaviour
 
     private StunGunFx fx;
     private StunGunCooldownUI cooldownUi;
+    private bool crosshairVisible;
 
     private void Awake()
     {
@@ -202,6 +206,7 @@ public class StunGun : NetworkBehaviour
 
     private void SetCrosshairVisible(bool visible)
     {
+        crosshairVisible = visible;
         if (visible)
         {
             EnsureCrosshair();
@@ -211,6 +216,16 @@ public class StunGun : NetworkBehaviour
         {
             crosshairRoot.SetActive(visible);
         }
+    }
+
+    private void OnGUI()
+    {
+        if (crosshairVisible == false || Event.current.type != EventType.Repaint)
+        {
+            return;
+        }
+
+        DrawCrosshair(sharedCrosshairColor, sharedCrosshairSize, sharedCrosshairThickness);
     }
 
     private void EnsureCrosshair()
@@ -272,6 +287,25 @@ public class StunGun : NetworkBehaviour
             Destroy(crosshairRoot);
             crosshairRoot = null;
         }
+    }
+
+    private static Texture2D sharedCrosshairTex;
+    private static void DrawCrosshair(Color color, float size, float thickness)
+    {
+        if (sharedCrosshairTex == null)
+        {
+            sharedCrosshairTex = new Texture2D(1, 1, TextureFormat.ARGB32, false);
+            sharedCrosshairTex.SetPixel(0, 0, Color.white);
+            sharedCrosshairTex.Apply();
+        }
+
+        float cx = Screen.width * 0.5f;
+        float cy = Screen.height * 0.5f;
+        var prev = GUI.color;
+        GUI.color = color;
+        GUI.DrawTexture(new Rect(cx - size * 0.5f, cy - thickness * 0.5f, size, thickness), sharedCrosshairTex);
+        GUI.DrawTexture(new Rect(cx - thickness * 0.5f, cy - size * 0.5f, thickness, size), sharedCrosshairTex);
+        GUI.color = prev;
     }
 
     private void BeginLookToCamera()
