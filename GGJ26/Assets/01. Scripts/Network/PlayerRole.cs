@@ -33,7 +33,7 @@ public class PlayerRole : NetworkBehaviour
 
     public override void FixedUpdateNetwork()
     {
-        if (RoleAssigned == false)
+        if (RoleAssigned == false || MaskAssigned == false)
         {
             TryAssignRole();
         }
@@ -66,51 +66,61 @@ public class PlayerRole : NetworkBehaviour
             return;
         }
 
-        if (RoleAssigned)
+        if (RoleAssigned == false)
         {
-            return;
-        }
-
-        if (Runner == null || GetActivePlayerCount() == 0)
-        {
-            return;
-        }
-
-        if (playerStateManager == null)
-        {
-            playerStateManager = FindFirstObjectByType<PlayerStateManager>();
-        }
-
-        PlayerRef seeker = GetDeterministicSeeker();
-        IsSeeker = Object.InputAuthority == seeker;
-        RoleAssigned = true;
-
-        if (playerStateManager != null)
-        {
-            string playerId = Object.InputAuthority.RawEncoded.ToString();
-            playerStateManager.RegisterPlayerNetworked(playerId, IsSeeker);
-            if (Object.HasInputAuthority)
+            if (Runner == null || GetActivePlayerCount() == 0)
             {
-                playerStateManager.SetLocalPlayer(playerId);
+                return;
+            }
+
+            if (playerStateManager == null)
+            {
+                playerStateManager = FindFirstObjectByType<PlayerStateManager>();
+            }
+
+            PlayerRef seeker = GetDeterministicSeeker();
+            IsSeeker = Object.InputAuthority == seeker;
+            RoleAssigned = true;
+
+            if (playerStateManager != null)
+            {
+                string playerId = Object.InputAuthority.RawEncoded.ToString();
+                playerStateManager.RegisterPlayerNetworked(playerId, IsSeeker);
+                if (Object.HasInputAuthority)
+                {
+                    playerStateManager.SetLocalPlayer(playerId);
+                }
             }
         }
 
         if (IsSeeker)
         {
-            SeekerSkinIndex = SeekerSkinSelection.LoadSelectedSkinIndex();
-            MaskColorIndex = -1;
-            if (MaskSeed == 0)
+            if (MaskAssigned == false)
             {
-                MaskSeed = Random.Range(1, int.MaxValue);
-            }
+                SeekerSkinIndex = SeekerSkinSelection.LoadSelectedSkinIndex();
+                MaskColorIndex = -1;
+                if (MaskSeed == 0)
+                {
+                    MaskSeed = Random.Range(1, int.MaxValue);
+                }
 
-            MaskAssigned = true;
+                MaskAssigned = true;
+            }
+            return;
+        }
+
+        if (MaskAssigned)
+        {
             return;
         }
 
         int seed = GetMaskSeed();
         if (seed == 0)
         {
+            if (enableDebugLogs)
+            {
+                Debug.Log($"[PlayerRole] Waiting for mask seed on {name}.");
+            }
             return;
         }
 

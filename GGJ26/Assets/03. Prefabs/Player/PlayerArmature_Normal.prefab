@@ -152,6 +152,7 @@ GameObject:
   - component: {fileID: 4235962298446683591}
   - component: {fileID: 3179968366648037960}
   - component: {fileID: 7564230312845050137}
+  - component: {fileID: 1082939261114067215}
   m_Layer: 6
   m_Name: PlayerArmature_Normal
   m_TagString: Player
@@ -193,6 +194,7 @@ MonoBehaviour:
   characterController: {fileID: 5571157124973899772}
   cameraController: {fileID: 0}
   spectatorController: {fileID: 2233445735992974238}
+  spectatorSabotageController: {fileID: 0}
   bodyRenderers: []
   animator: {fileID: 0}
   spectatorRigPrefab: {fileID: 2070925441746177671, guid: a1a802ecaf6775746bb2a929fb554ad8, type: 3}
@@ -226,6 +228,8 @@ MonoBehaviour:
   shootTransform: {fileID: 0}
   shootVfx: {fileID: 0}
   fogEffectPrefab: {fileID: 0}
+  fogEffectLifetime: 10
+  fogEffectFadeDuration: 2
   sfxEventChannel: {fileID: 11400000, guid: 06d6e7e2f1efcf34091297cc2951787b, type: 2}
   sfxConfiguration: {fileID: 11400000, guid: 854501da1c4d88b498813056f7cc098d, type: 2}
   shootSfxCue: {fileID: 11400000, guid: 07ce1e08503ce9e4ab531c18151365e7, type: 2}
@@ -516,6 +520,7 @@ MonoBehaviour:
   - {fileID: 7184304829773012022}
   - {fileID: 8598900610164462641}
   - {fileID: 3179968366648037960}
+  - {fileID: 1082939261114067215}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &425970233805690751
 MonoBehaviour:
@@ -617,6 +622,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6aa5d0c32c6f4ad4b032c2f897cd5c9e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  enableDebugLogs: 1
   _IsSeeker:
     _value: 0
 --- !u!114 &7564230312845050137
@@ -635,6 +641,7 @@ MonoBehaviour:
   stunGun: {fileID: 4849161580012950415}
   seekerVisualRoot: {fileID: 0}
   normalVisualRoot: {fileID: 0}
+  seekerMaskObjects: []
   maskObjects:
   - {fileID: 6093556818343117413}
   - {fileID: 0}
@@ -651,6 +658,45 @@ MonoBehaviour:
   sfxEventChannel: {fileID: 11400000, guid: 06d6e7e2f1efcf34091297cc2951787b, type: 2}
   sfxConfiguration: {fileID: 11400000, guid: 854501da1c4d88b498813056f7cc098d, type: 2}
   maskChangeSfxCue: {fileID: 11400000, guid: 45a4ef5f671650440b6ef21782e00bd4, type: 2}
+  fireworkSpawnYOffset: -0.6
+--- !u!114 &1082939261114067215
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 456408205788446354}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9588d950aa1361e469ad76d6feba89cc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enableDebugLogs: 1
+  aimLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  aimDistance: 60
+  smokeSpawnForwardOffset: 5
+  shoeProjectilePrefab: {fileID: 1077857044643151974, guid: d2b11640890aae846aa0fee9fe7029f3, type: 3}
+  shoeStunSeconds: 0.5
+  shoeKnockbackSpeed: 2.4
+  shoeProjectileSpeed: 18
+  shoeProjectileLifetime: 1.2
+  shoeSpawnForwardOffset: 0.8
+  shoeHitRadius: 0.45
+  shoeHitDistance: 22
+  ghostSmokePrefab: {fileID: 5989128303339467817, guid: 8262abb744c274246a87fdf578f77f46, type: 3}
+  ghostSmokeTemplateObjectName: SabotageGhostSmokeTemplate
+  ghostSmokeLifetime: 10
+  ghostSmokeFadeDuration: 2
+  phantomDanceDuration: 2
+  showSpectatorCrosshair: 1
+  crosshairIdleColor: {r: 1, g: 1, b: 1, a: 1}
+  crosshairArmedColor: {r: 1, g: 0.95, b: 0.4, a: 1}
+  crosshairSize: 18
+  crosshairThickness: 2
+  spectatorCrosshairObjectName: SeekerCrosshairUI
+  spectatorCrosshairRoot: {fileID: 0}
 --- !u!1 &752989075150667910
 GameObject:
   m_ObjectHideFlags: 0

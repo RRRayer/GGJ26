@@ -1154,6 +1154,7 @@ MonoBehaviour:
   nicknameInput: {fileID: 0}
   nicknameConfirmButton: {fileID: 0}
   roomPanel: {fileID: 651107029}
+  roomPanelTitleText: {fileID: 0}
   roomNameInput: {fileID: 1450188902}
   roomPasswordInput: {fileID: 555867046}
   roomCloseButton: {fileID: 735033279}
@@ -2653,9 +2654,57 @@ PrefabInstance:
       propertyPath: 'm_fontSharedMaterials.Array.data[0]'
       value: 
       objectReference: {fileID: 564439800}
+    - target: {fileID: 5020251786325892676, guid: d8790d17699e6614db16a6c30df9c4bf, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5020251786325892676, guid: d8790d17699e6614db16a6c30df9c4bf, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5020251786325892676, guid: d8790d17699e6614db16a6c30df9c4bf, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5020251786325892676, guid: d8790d17699e6614db16a6c30df9c4bf, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7157335728196217413, guid: d8790d17699e6614db16a6c30df9c4bf, type: 3}
       propertyPath: m_Name
       value: CanvasLobby
+      objectReference: {fileID: 0}
+    - target: {fileID: 7378874216843939466, guid: d8790d17699e6614db16a6c30df9c4bf, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7378874216843939466, guid: d8790d17699e6614db16a6c30df9c4bf, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7378874216843939466, guid: d8790d17699e6614db16a6c30df9c4bf, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7378874216843939466, guid: d8790d17699e6614db16a6c30df9c4bf, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8057994762914373383, guid: d8790d17699e6614db16a6c30df9c4bf, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8057994762914373383, guid: d8790d17699e6614db16a6c30df9c4bf, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8057994762914373383, guid: d8790d17699e6614db16a6c30df9c4bf, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8057994762914373383, guid: d8790d17699e6614db16a6c30df9c4bf, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

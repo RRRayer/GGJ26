@@ -1,4 +1,4 @@
-using Fusion;
+﻿using Fusion;
 using UnityEngine;
 
 public struct PlayerInputData : INetworkInput
@@ -8,6 +8,9 @@ public struct PlayerInputData : INetworkInput
     public bool Jump;
     public bool Sprint;
     public int danceIndex;
-    // NPC 춤 명령을 위한 입력 값입니다.
     public bool npcDanceCommand;
+    public bool sabotageArm1;
+    public bool sabotageArm2;
+    public bool sabotageArm3;
+    public bool sabotageExecute;
 }
