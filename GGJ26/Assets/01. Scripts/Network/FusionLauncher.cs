@@ -242,7 +242,8 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
                 blueNpcPrefab,
                 greenNpcPrefab,
                 npcsPerColor,
-                maxPlayers);
+                maxPlayers,
+                minPlayersToStart);
             spawnService.BindRoleService(roleService, playerStateManager);
         }
     }

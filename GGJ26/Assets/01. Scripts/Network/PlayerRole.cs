@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Fusion;
 using UnityEngine;
 
@@ -15,6 +16,7 @@ public class PlayerRole : NetworkBehaviour
 
 
     private PlayerStateManager playerStateManager;
+    private FusionRoleAssignmentService roleAssignmentService;
     private bool lastIsSeeker;
     private bool lastRoleAssigned;
     private int lastMaskColorIndex = -1;
@@ -24,6 +26,7 @@ public class PlayerRole : NetworkBehaviour
     private void Awake()
     {
         playerStateManager = FindFirstObjectByType<PlayerStateManager>();
+        roleAssignmentService = FindFirstObjectByType<FusionRoleAssignmentService>();
     }
 
     public override void Spawned()
@@ -68,7 +71,7 @@ public class PlayerRole : NetworkBehaviour
 
         if (RoleAssigned == false)
         {
-            if (Runner == null || GetActivePlayerCount() == 0)
+            if (Runner == null || GetActivePlayerCount() < 2)
             {
                 return;
             }
@@ -128,6 +131,34 @@ public class PlayerRole : NetworkBehaviour
         MaskAssigned = true;
     }
 
+    private PlayerRef GetDeterministicSeeker()
+    {
+        if (roleAssignmentService == null)
+        {
+            roleAssignmentService = FindFirstObjectByType<FusionRoleAssignmentService>();
+        }
+
+        if (roleAssignmentService != null)
+        {
+            var assigned = roleAssignmentService.GetDeterministicSeeker(Runner);
+            if (assigned != default)
+            {
+                return assigned;
+            }
+        }
+
+        var players = Runner.ActivePlayers.OrderBy(p => p.RawEncoded).ToList();
+        if (players.Count == 0)
+        {
+            return default;
+        }
+
+        string sessionName = Runner.SessionInfo.IsValid ? Runner.SessionInfo.Name : string.Empty;
+        int seed = string.IsNullOrWhiteSpace(sessionName) ? 1337 : sessionName.GetHashCode();
+        int index = Mathf.Abs(seed) % players.Count;
+        return players[index];
+    }
+
     private int GetActivePlayerCount()
     {
         int count = 0;
@@ -154,8 +185,11 @@ public class PlayerRole : NetworkBehaviour
             return 0;
         }
 
-        PlayerRef seeker = players[0];
-        players.Remove(seeker);
+        PlayerRef seeker = GetDeterministicSeeker();
+        if (seeker != default)
+        {
+            players.Remove(seeker);
+        }
 
         Shuffle(players, seed);
 
@@ -170,22 +204,6 @@ public class PlayerRole : NetworkBehaviour
         return 0;
     }
 
-    private PlayerRef GetDeterministicSeeker()
-    {
-        PlayerRef chosen = default;
-        bool hasValue = false;
-        foreach (var player in Runner.ActivePlayers)
-        {
-            if (hasValue == false || player.RawEncoded < chosen.RawEncoded)
-            {
-                chosen = player;
-                hasValue = true;
-            }
-        }
-
-        return chosen;
-    }
-
     private int GetMaskSeed()
     {
         if (Runner == null)
@@ -194,6 +212,11 @@ public class PlayerRole : NetworkBehaviour
         }
 
         PlayerRef seeker = GetDeterministicSeeker();
+        if (seeker == default)
+        {
+            return 0;
+        }
+
         if (Runner.TryGetPlayerObject(seeker, out var seekerObject) == false || seekerObject == null)
         {
             return 0;
