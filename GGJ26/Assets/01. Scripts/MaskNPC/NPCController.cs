@@ -239,10 +239,42 @@ public class NPCController : NetworkBehaviour
 
     private bool TrySnapToGround()
     {
-        Vector3 origin = transform.position + Vector3.up * 1.2f;
-        if (Physics.Raycast(origin, Vector3.down, out RaycastHit hit, 30f, GroundLayers, QueryTriggerInteraction.Ignore))
+        Vector3 origin = transform.position + Vector3.up * 2.0f;
+        RaycastHit[] hits = Physics.RaycastAll(origin, Vector3.down, 60f, GroundLayers, QueryTriggerInteraction.Ignore);
+        if (hits == null || hits.Length == 0)
         {
-            Vector3 snapped = hit.point + Vector3.up * deathGroundOffset;
+            return false;
+        }
+
+        bool hasValidHit = false;
+        RaycastHit selectedHit = default;
+        float lowestY = float.PositiveInfinity;
+
+        for (int i = 0; i < hits.Length; i++)
+        {
+            var hit = hits[i];
+            if (hit.collider == null)
+            {
+                continue;
+            }
+
+            // Ignore self-colliders so we never snap to our own capsule/body.
+            if (hit.collider.transform != null && hit.collider.transform.root == transform.root)
+            {
+                continue;
+            }
+
+            if (hit.point.y < lowestY)
+            {
+                lowestY = hit.point.y;
+                selectedHit = hit;
+                hasValidHit = true;
+            }
+        }
+
+        if (hasValidHit)
+        {
+            Vector3 snapped = selectedHit.point + Vector3.up * deathGroundOffset;
             if ((transform.position - snapped).sqrMagnitude > 0.0001f)
             {
                 transform.position = snapped;
