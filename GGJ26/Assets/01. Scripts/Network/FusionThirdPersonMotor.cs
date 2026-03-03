@@ -39,6 +39,7 @@ public class FusionThirdPersonMotor : NetworkBehaviour
     // This property is an infrequent event, so it's fine to keep it networked.
     [Networked] private NetworkBool NetIsDancing { get; set; }
     [Networked] private int NetDanceIndex { get; set; }
+    [Networked] private TickTimer SabotageStunTimer { get; set; }
 
     private CharacterController controller;
     private Animator animator;
@@ -68,6 +69,7 @@ public class FusionThirdPersonMotor : NetworkBehaviour
     private Vector3 lastRenderPosition;
     private bool lastNetIsDancing;
     private int lastNetDanceIndex;
+    private Vector3 sabotageKnockbackVelocity;
 
     // Seeker NPC 춤 명령 반경을 반환합니다. ScriptableObject 설정이 우선됩니다.
     private float NpcDanceRadius => npcDanceCommandSettings != null ? npcDanceCommandSettings.radius : npcDanceCommandRadius;
@@ -167,6 +169,22 @@ public class FusionThirdPersonMotor : NetworkBehaviour
                 NetIsDancing = false;
                 ApplyDanceStop();
             }
+            return;
+        }
+
+        if (IsSabotageStunned())
+        {
+            isGrounded = CheckGrounded();
+            if (isGrounded)
+            {
+                lastGroundedTime = Runner.SimulationTime;
+            }
+
+            Vector3 knockbackHorizontal = sabotageKnockbackVelocity;
+            ApplyGravity(knockbackHorizontal, false);
+            sabotageKnockbackVelocity = Vector3.Lerp(sabotageKnockbackVelocity, Vector3.zero, Runner.DeltaTime * 12f);
+            inputMagnitude = 0f;
+            horizontalSpeed = new Vector3(knockbackHorizontal.x, 0f, knockbackHorizontal.z).magnitude;
             return;
         }
 
@@ -391,6 +409,59 @@ public class FusionThirdPersonMotor : NetworkBehaviour
 
         animator.ResetTrigger(animIDStartDance);
         animator.SetTrigger(animIDStopDance);
+    }
+
+    public void RequestSabotageStun(float durationSeconds, Vector3 knockbackDirection, float knockbackSpeed)
+    {
+        if (Object == null)
+        {
+            return;
+        }
+
+        if (Object.HasStateAuthority)
+        {
+            ApplySabotageStunInternal(durationSeconds, knockbackDirection, knockbackSpeed);
+            return;
+        }
+
+        RpcRequestSabotageStun(durationSeconds, knockbackDirection, knockbackSpeed);
+    }
+
+    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
+    private void RpcRequestSabotageStun(float durationSeconds, Vector3 knockbackDirection, float knockbackSpeed)
+    {
+        ApplySabotageStunInternal(durationSeconds, knockbackDirection, knockbackSpeed);
+    }
+
+    private void ApplySabotageStunInternal(float durationSeconds, Vector3 knockbackDirection, float knockbackSpeed)
+    {
+        if (Object == null || Object.HasStateAuthority == false)
+        {
+            return;
+        }
+
+        float clampedDuration = Mathf.Clamp(durationSeconds, 0.05f, 2f);
+        SabotageStunTimer = TickTimer.CreateFromSeconds(Runner, clampedDuration);
+
+        Vector3 dir = knockbackDirection;
+        dir.y = 0f;
+        if (dir.sqrMagnitude < 0.0001f)
+        {
+            dir = transform.forward;
+        }
+
+        sabotageKnockbackVelocity = dir.normalized * Mathf.Max(0f, knockbackSpeed);
+        Debug.Log($"[Sabotage] Stun applied on {name}: duration={clampedDuration:F2}, knockback={sabotageKnockbackVelocity}");
+    }
+
+    private bool IsSabotageStunned()
+    {
+        if (Runner == null)
+        {
+            return false;
+        }
+
+        return SabotageStunTimer.ExpiredOrNotRunning(Runner) == false;
     }
 
 }

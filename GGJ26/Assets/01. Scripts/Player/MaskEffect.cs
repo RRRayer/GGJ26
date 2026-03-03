@@ -1,89 +1,116 @@
-using UnityEngine;
-using DG.Tweening;
 using System.Threading.Tasks;
+using UnityEngine;
 using UnityEngine.VFX;
 
 public class MaskEffect : MonoBehaviour
 {
-    [Header("구성 요소")]
-    public GameObject maskObject; // 애니메이션 될 가면 모델
-    public VisualEffect flashVFX; // 재생할 파티클 이펙트
-    public Light flashLight; // 껐다 켤 라이트
+    [Header("Setup")]
+    public VisualEffect flashVFX;
 
-    [Header("애니메이션 설정")]
-    public int rotationCount = 2;
-    public float yOffset = -0.5f;
-    public float animationDuration = 0.8f;
-    
-    [Header("라이트 설정")] // New header
-    public float lightFlashDuration = 0.3f;
-    public float flashEndRangeMultiplier = 2.0f; // Range after the flash
+    [Header("Lifecycle")]
+    public float selfDestructDelay = 10f;
+    [SerializeField] private float stopVfxAfterSeconds = -1f;
 
-    public float selfDestructDelay = 2f; // 파괴 전 대기 시간
+    [Header("Firework")]
+    [SerializeField] private string fireworkGradientPropertyName = "Color";
 
-    // 이 메서드가 연출의 모든 것을 책임지고, 끝날 때 Task를 완료합니다.
+    private Gradient overrideGradient;
+    private Color? overrideColor;
+
+    public void SetFireworkGradient(Gradient gradient)
+    {
+        overrideGradient = gradient;
+    }
+
+    public void SetFireworkColor(Color color)
+    {
+        overrideColor = color;
+    }
+
     public async Task PlayEffectSequence()
     {
-        if (maskObject == null)
-        {
-            Debug.LogWarning("MaskObject가 할당되지 않았습니다.", this);
-            await Task.CompletedTask;
-            return;
-        }
-
-        // 1. 가면 회전 및 하강 애니메이션
-        Sequence animSequence = DOTween.Sequence();
-        animSequence.Join(maskObject.transform.DORotate(new Vector3(0, 360 * rotationCount, 0), animationDuration, RotateMode.LocalAxisAdd));
-        maskObject.transform.position = new Vector3(maskObject.transform.position.x, maskObject.transform.position.y - yOffset, maskObject.transform.position.z); 
-        animSequence.Join(maskObject.transform.DOLocalMoveY(yOffset, animationDuration).SetRelative(true));
-
-        // DOTween 애니메이션이 끝날 때까지 기다립니다.
-        await animSequence.AsyncWaitForCompletion();
-
-        // 2. 파티클 및 라이트 점멸 효과
         if (flashVFX != null)
-            flashVFX.Play();
-
-        if (flashLight != null)
         {
-            float originalIntensity = flashLight.intensity;
-            float originalRange = flashLight.range; // 원본 range 값 저장
+            string gradientProperty = ResolveGradientPropertyName();
+            Color representativeColor = ResolveRepresentativeColor();
 
-            flashLight.enabled = true;
-            Sequence lightSequence = DOTween.Sequence();
+            if (overrideGradient != null)
+            {
+                if (flashVFX.HasGradient(gradientProperty) == false)
+                {
+                    Debug.LogWarning($"[MaskEffect] Gradient property not found on VFX: {gradientProperty}", this);
+                }
+                flashVFX.SetGradient(gradientProperty, overrideGradient);
+            }
 
-            // Phase 1: One Flash (Intensity and Range to 0, then back to original)
-            // Fade out
-            lightSequence.Append(flashLight.DOIntensity(0, lightFlashDuration / 2))
-                         .Join(DOTween.To(() => flashLight.range, x => flashLight.range = x, 0, lightFlashDuration / 2));
-            // Fade in
-            lightSequence.Append(flashLight.DOIntensity(originalIntensity, lightFlashDuration / 2))
-                         .Join(DOTween.To(() => flashLight.range, x => flashLight.range = x, originalRange, lightFlashDuration / 2));
+            flashVFX.SetVector4("Color", representativeColor);
+            flashVFX.SetVector4("color", representativeColor);
+            flashVFX.SetVector4("_Color", representativeColor);
 
-            // Phase 2: Range Increase
-            // Animate range to a new, larger value (based on multiplier)
-            lightSequence.Append(DOTween.To(() => flashLight.range, x => flashLight.range = x, originalRange * flashEndRangeMultiplier, lightFlashDuration / 2));
-            
-            // 라이트 애니메이션이 끝날 때까지 기다립니다.
-            await lightSequence.AsyncWaitForCompletion();
-            flashLight.enabled = false;
+            flashVFX.Reinit();
+
+            if (overrideGradient != null)
+            {
+                flashVFX.SetGradient(gradientProperty, overrideGradient);
+            }
+
+            // Some VFX graphs read color from event attributes, not property sheets.
+            // Send both gradient + event color to cover both authoring patterns.
+            VFXEventAttribute eventAttribute = flashVFX.CreateVFXEventAttribute();
+            eventAttribute.SetVector4("Color", representativeColor);
+            eventAttribute.SetVector4("color", representativeColor);
+            eventAttribute.SetVector4("_Color", representativeColor);
+            flashVFX.SendEvent("OnPlay", eventAttribute);
+
+            // Stop first so live particles can naturally fade by VFX graph lifetime.
+            if (stopVfxAfterSeconds > 0f && stopVfxAfterSeconds < selfDestructDelay)
+            {
+                await Task.Delay(Mathf.RoundToInt(stopVfxAfterSeconds * 1000f));
+                flashVFX.Stop();
+            }
         }
 
-        // 3. 스스로 파괴
         Destroy(gameObject, selfDestructDelay);
-
-        // (선택) 파티클이 사라질 약간의 추가 시간을 기다립니다.
-        await Task.Delay(500);
+        await Task.Delay(Mathf.Max(100, Mathf.RoundToInt(selfDestructDelay * 1000f)));
     }
-}
 
-// DOTween Pro가 없는 경우를 대비한 확장 메서드
-public static class DotweenExtensions
-{
-    public static Task AsyncWaitForCompletion(this Tween tween)
+    private string ResolveGradientPropertyName()
     {
-        var tcs = new TaskCompletionSource<bool>();
-        tween.OnComplete(() => tcs.SetResult(true));
-        return tcs.Task;
+        if (flashVFX == null)
+        {
+            return fireworkGradientPropertyName;
+        }
+
+        if (flashVFX.HasGradient(fireworkGradientPropertyName))
+        {
+            return fireworkGradientPropertyName;
+        }
+
+        if (flashVFX.HasGradient("Color"))
+        {
+            return "Color";
+        }
+
+        if (flashVFX.HasGradient("color"))
+        {
+            return "color";
+        }
+
+        return fireworkGradientPropertyName;
+    }
+
+    private Color ResolveRepresentativeColor()
+    {
+        if (overrideColor.HasValue)
+        {
+            return overrideColor.Value;
+        }
+
+        if (overrideGradient != null)
+        {
+            return overrideGradient.Evaluate(0.5f);
+        }
+
+        return Color.white;
     }
 }

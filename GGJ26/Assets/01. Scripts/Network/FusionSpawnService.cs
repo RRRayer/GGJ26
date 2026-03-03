@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Fusion;
 using UnityEngine;
 
@@ -33,6 +34,7 @@ public class FusionSpawnService : MonoBehaviour
     private NetworkObject greenNpcPrefab;
     private int npcsPerColor;
     private int maxPlayers;
+    private int minPlayersToAssignRoles = 2;
 
     private bool spawnLayoutRoutineRunning;
     private bool pendingLocalSpawn;
@@ -76,7 +78,8 @@ public class FusionSpawnService : MonoBehaviour
         NetworkObject blueNpcPrefab,
         NetworkObject greenNpcPrefab,
         int npcsPerColor,
-        int maxPlayers)
+        int maxPlayers,
+        int minPlayersToAssignRoles)
     {
         this.playerPrefab = playerPrefab;
         this.seekerPrefab = seekerPrefab;
@@ -96,6 +99,7 @@ public class FusionSpawnService : MonoBehaviour
         this.greenNpcPrefab = greenNpcPrefab;
         this.npcsPerColor = npcsPerColor;
         this.maxPlayers = Mathf.Max(1, maxPlayers);
+        this.minPlayersToAssignRoles = Mathf.Max(2, minPlayersToAssignRoles);
     }
 
     public void SetMaxPlayers(int value)
@@ -189,6 +193,10 @@ public class FusionSpawnService : MonoBehaviour
         pendingLocalSpawn = false;
         spawnLayoutRoutineRunning = false;
         spawnedPlayers.Clear();
+        if (roleService != null)
+        {
+            roleService.ResetAssignment();
+        }
     }
 
     private IEnumerator WaitForSpawnPointsAndBuild()
@@ -274,6 +282,11 @@ public class FusionSpawnService : MonoBehaviour
         }
 
         if (player != runner.LocalPlayer)
+        {
+            return false;
+        }
+
+        if (runner.ActivePlayers.Count() < minPlayersToAssignRoles)
         {
             return false;
         }

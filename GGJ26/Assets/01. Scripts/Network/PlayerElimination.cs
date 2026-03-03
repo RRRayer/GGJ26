@@ -7,6 +7,7 @@ public class PlayerElimination : NetworkBehaviour
     [SerializeField] private CharacterController characterController;
     [SerializeField] private FusionThirdPersonCamera cameraController;
     [SerializeField] private SpectatorController spectatorController;
+    [SerializeField] private SpectatorSabotageController spectatorSabotageController;
     [SerializeField] private Renderer[] bodyRenderers;
     [SerializeField] private Animator animator;
     [SerializeField] private GameObject spectatorRigPrefab;
@@ -48,6 +49,15 @@ public class PlayerElimination : NetworkBehaviour
         if (spectatorController == null)
         {
             spectatorController = GetComponent<SpectatorController>();
+        }
+
+        if (spectatorSabotageController == null)
+        {
+            spectatorSabotageController = GetComponent<SpectatorSabotageController>();
+            if (spectatorSabotageController == null)
+            {
+                spectatorSabotageController = gameObject.AddComponent<SpectatorSabotageController>();
+            }
         }
 
         if (animator == null)
@@ -168,6 +178,11 @@ public class PlayerElimination : NetworkBehaviour
             spectatorController.enabled = false;
         }
 
+        if (spectatorSabotageController != null)
+        {
+            spectatorSabotageController.enabled = eliminated;
+        }
+
         if (cameraController != null)
         {
             cameraController.enabled = !eliminated;
@@ -189,6 +204,10 @@ public class PlayerElimination : NetworkBehaviour
             if (eliminated)
             {
                 EnsureSpectatorRig();
+                if (spectatorSabotageController != null && spectatorRigPrefab == null && spectatorController != null)
+                {
+                    spectatorSabotageController.SetSpectatorAimOrigin(spectatorController.transform);
+                }
                 if (_playerRole != null && !_playerRole.IsSeeker)
                 {
                     var deadUI = FindFirstObjectByType<UIDead>();
@@ -231,6 +250,10 @@ public class PlayerElimination : NetworkBehaviour
             if (spectatorController != null)
             {
                 spectatorController.enabled = true;
+                if (spectatorSabotageController != null)
+                {
+                    spectatorSabotageController.SetSpectatorAimOrigin(spectatorController.transform);
+                }
             }
             return;
         }
@@ -256,6 +279,10 @@ public class PlayerElimination : NetworkBehaviour
             spectator = spectatorInstance.AddComponent<SpectatorController>();
         }
         spectator.enabled = true;
+        if (spectatorSabotageController != null)
+        {
+            spectatorSabotageController.SetSpectatorAimOrigin(spectator.transform);
+        }
     }
 
     private void CleanupSpectatorRig()
@@ -269,6 +296,11 @@ public class PlayerElimination : NetworkBehaviour
         if (spectatorController != null)
         {
             spectatorController.enabled = false;
+        }
+
+        if (spectatorSabotageController != null)
+        {
+            spectatorSabotageController.SetSpectatorAimOrigin(null);
         }
     }
 
@@ -299,10 +331,42 @@ public class PlayerElimination : NetworkBehaviour
 
     private bool TrySnapToGround()
     {
-        Vector3 origin = transform.position + Vector3.up * 1.2f;
-        if (Physics.Raycast(origin, Vector3.down, out RaycastHit hit, 30f, deathGroundLayers, QueryTriggerInteraction.Ignore))
+        Vector3 origin = transform.position + Vector3.up * 2.0f;
+        RaycastHit[] hits = Physics.RaycastAll(origin, Vector3.down, 60f, deathGroundLayers, QueryTriggerInteraction.Ignore);
+        if (hits == null || hits.Length == 0)
         {
-            Vector3 snapped = hit.point + Vector3.up * deathGroundOffset;
+            return false;
+        }
+
+        bool hasValidHit = false;
+        RaycastHit selectedHit = default;
+        float lowestY = float.PositiveInfinity;
+
+        for (int i = 0; i < hits.Length; i++)
+        {
+            var hit = hits[i];
+            if (hit.collider == null)
+            {
+                continue;
+            }
+
+            // Ignore self-colliders so we never snap to our own body.
+            if (hit.collider.transform != null && hit.collider.transform.root == transform.root)
+            {
+                continue;
+            }
+
+            if (hit.point.y < lowestY)
+            {
+                lowestY = hit.point.y;
+                selectedHit = hit;
+                hasValidHit = true;
+            }
+        }
+
+        if (hasValidHit)
+        {
+            Vector3 snapped = selectedHit.point + Vector3.up * deathGroundOffset;
             if ((transform.position - snapped).sqrMagnitude > 0.0001f)
             {
                 transform.position = snapped;
