@@ -30,6 +30,7 @@ public class GameManager : NetworkBehaviour
     [SerializeField] private GameStateController gameStateController;
     [SerializeField] private GameTimerController timerController;
     [SerializeField] private GameResultController resultController;
+    [SerializeField] private DeathmatchMatchController deathmatchController;
 
     [Header("Broadcasting on")]
     [SerializeField] private GameStateEventChannelSO onGameStateChanged;
@@ -93,6 +94,11 @@ public class GameManager : NetworkBehaviour
         if (resultController == null)
         {
             resultController = gameObject.AddComponent<GameResultController>();
+        }
+
+        if (deathmatchController == null)
+        {
+            deathmatchController = GetComponent<DeathmatchMatchController>();
         }
 
         if (gameStateController != null)
@@ -183,7 +189,7 @@ public class GameManager : NetworkBehaviour
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        if (scene.name == gameSceneName)
+        if (IsGameplayScene(scene))
         {
             StartNewGame();
         }
@@ -310,6 +316,11 @@ public class GameManager : NetworkBehaviour
             timerController.IsGameplayActive = gameStateController == null || gameStateController.IsGameplay();
             timerController.HasEnded = resultController != null && resultController.HasEnded;
             timerController.TickTimerUI();
+        }
+
+        if (GameModeRuntime.IsDeathmatch)
+        {
+            return;
         }
 
         if (playerStateManager == null)
@@ -500,6 +511,27 @@ public class GameManager : NetworkBehaviour
     {
         var runner = FindFirstObjectByType<NetworkRunner>();
         return runner == null || runner.IsRunning == false;
+    }
+
+    private bool IsGameplayScene(Scene scene)
+    {
+        if (scene.name == gameSceneName)
+        {
+            return true;
+        }
+
+        string path = scene.path;
+        if (path.EndsWith("GameScene.unity", System.StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        if (path.EndsWith("DeathMatchGameScene.unity", System.StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return path.EndsWith("Game.unity", System.StringComparison.OrdinalIgnoreCase);
     }
 
     private void OnGroupDanceActive(bool isActive)

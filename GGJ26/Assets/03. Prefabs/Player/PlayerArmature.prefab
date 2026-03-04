@@ -1049,6 +1049,7 @@ GameObject:
   - component: {fileID: 7520514698857385123}
   - component: {fileID: 9100000000000000011}
   - component: {fileID: 2387032985855058910}
+  - component: {fileID: 5887531678613634050}
   m_Layer: 6
   m_Name: PlayerArmature
   m_TagString: Player
@@ -1166,6 +1167,9 @@ MonoBehaviour:
   sfxConfiguration: {fileID: 0}
   shootSfxCue: {fileID: 0}
   hitSfxCue: {fileID: 0}
+  sharedCrosshairSize: 18
+  sharedCrosshairThickness: 2
+  sharedCrosshairColor: {r: 1, g: 1, b: 1, a: 1}
   rotateDuration: 0.05
 --- !u!114 &9100000000000000009
 MonoBehaviour:
@@ -1443,6 +1447,7 @@ MonoBehaviour:
   - {fileID: 8096708549146426077}
   - {fileID: 9100000000000000011}
   - {fileID: 2387032985855058910}
+  - {fileID: 5887531678613634050}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &2498353686968945355
 MonoBehaviour:
@@ -1560,6 +1565,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   enableDebugLogs: 1
+  unlimitedUsesForTesting: 0
   aimLayerMask:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -1570,6 +1576,7 @@ MonoBehaviour:
   shoeKnockbackSpeed: 2.4
   shoeProjectileSpeed: 18
   shoeProjectileLifetime: 1.2
+  shoeProjectileGravity: 9.8
   shoeSpawnForwardOffset: 0.8
   shoeHitRadius: 0.45
   shoeHitDistance: 22
@@ -1585,6 +1592,25 @@ MonoBehaviour:
   crosshairThickness: 2
   spectatorCrosshairObjectName: SeekerCrosshairUI
   spectatorCrosshairRoot: {fileID: 0}
+--- !u!114 &5887531678613634050
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4416926081852918481}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cabc6b8ad54113b48b6af14afbc7d28f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  attackRange: 2.2
+  attackRadius: 0.45
+  attackCooldown: 0.6
+  attackMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  enableDebugLogs: 1
 --- !u!1 &4523139366846529165
 GameObject:
   m_ObjectHideFlags: 0

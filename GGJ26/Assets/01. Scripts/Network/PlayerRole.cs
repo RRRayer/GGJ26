@@ -71,7 +71,7 @@ public class PlayerRole : NetworkBehaviour
 
         if (RoleAssigned == false)
         {
-            if (Runner == null || GetActivePlayerCount() < 2)
+            if (Runner == null || GetActivePlayerCount() == 0)
             {
                 return;
             }
@@ -81,8 +81,15 @@ public class PlayerRole : NetworkBehaviour
                 playerStateManager = FindFirstObjectByType<PlayerStateManager>();
             }
 
-            PlayerRef seeker = GetDeterministicSeeker();
-            IsSeeker = Object.InputAuthority == seeker;
+            if (GameModeRuntime.IsDeathmatch)
+            {
+                IsSeeker = false;
+            }
+            else
+            {
+                PlayerRef seeker = GetDeterministicSeeker();
+                IsSeeker = Object.InputAuthority == seeker;
+            }
             RoleAssigned = true;
 
             if (playerStateManager != null)

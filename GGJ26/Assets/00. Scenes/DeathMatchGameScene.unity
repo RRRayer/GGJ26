@@ -603,6 +603,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   gameScenePath: Assets/00. Scenes/GameScene.unity
+  deathmatchScenePath: Assets/00. Scenes/DeathMatchGameScene.unity
   waitingRoomScenePath: Assets/00. Scenes/WaitingRoom.unity
   ensureFusionVoiceClient: 1
   voiceAutoConnectAndJoin: 0
@@ -1243,7 +1244,7 @@ MonoBehaviour:
   m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SortKey: 153898376
+  SortKey: 351995265
   ObjectInterest: 1
   Flags: 262145
   NestedObjects: []
@@ -6101,15 +6102,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1495647940384630265, guid: fe9646060860870468e10550124355b1, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 12.526033
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1495647940384630265, guid: fe9646060860870468e10550124355b1, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.88758487
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1495647940384630265, guid: fe9646060860870468e10550124355b1, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -8.539987
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1495647940384630265, guid: fe9646060860870468e10550124355b1, type: 3}
       propertyPath: m_LocalRotation.w
@@ -6193,16 +6194,16 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8329258970861036553, guid: fe9646060860870468e10550124355b1, type: 3}
       propertyPath: SortKey
-      value: 1306395723
+      value: 1504492612
       objectReference: {fileID: 0}
     - target: {fileID: 8329258970861036553, guid: fe9646060860870468e10550124355b1, type: 3}
       propertyPath: NetworkedBehaviours.Array.size
-      value: 1
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 8329258970861036553, guid: fe9646060860870468e10550124355b1, type: 3}
       propertyPath: 'NetworkedBehaviours.Array.data[1]'
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 1934341132831351138}
     - target: {fileID: 8702735901867188176, guid: fe9646060860870468e10550124355b1, type: 3}
       propertyPath: SortKey
       value: 3600773910
@@ -6210,8 +6211,39 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 7863296486997111603, guid: fe9646060860870468e10550124355b1, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1934341132831351138}
   m_SourcePrefab: {fileID: 100100000, guid: fe9646060860870468e10550124355b1, type: 3}
+--- !u!1 &1934341132831351137 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7863296486997111603, guid: fe9646060860870468e10550124355b1, type: 3}
+  m_PrefabInstance: {fileID: 1934341132831351136}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1934341132831351138
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1934341132831351137}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99abcb5bf0b15014488ec85b22db7b55, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enableDebugLogs: 1
+  matchDurationSeconds: 180
+  initialSafeZoneRadius: 90
+  safeZoneCenter: {x: 0.3131907, y: 0.2465428, z: 6.4734874}
+  zoneTickInterval: 3
+  zoneLifeLossPerTick: 1
+  outsideZoneWorldTint: {fileID: 0}
+  _NetRemainingSeconds: 0
+  _NetSafeZoneRadius: 0
+  _NetIsFinished:
+    _value: 0
 --- !u!1001 &2070391229209387877
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6480,7 +6512,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5535076457467391008, guid: 5b7c902b5a9a4b04d9e709d1ea6ce83d, type: 3}
       propertyPath: SortKey
-      value: 771364557
+      value: 969461446
       objectReference: {fileID: 0}
     - target: {fileID: 8123527540548691173, guid: 5b7c902b5a9a4b04d9e709d1ea6ce83d, type: 3}
       propertyPath: seekerNpcDanceCommandEvent
@@ -6557,7 +6589,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6111275866977147054, guid: 302fb3a2e00a8fc4d910545cbeb7ddb8, type: 3}
       propertyPath: SortKey
-      value: 230972441
+      value: 429069330
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

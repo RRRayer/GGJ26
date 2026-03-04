@@ -12,7 +12,7 @@ public class LobbyMatchmakingUI : MonoBehaviour
     private enum RoomMode
     {
         Classic = 0,
-        Nuguri = 1
+        Deathmatch = 1
     }
 
     [SerializeField] private FusionLauncher launcher;
@@ -420,13 +420,23 @@ private void StartMatchmakingWithInputs(bool isCreateRoom)
             return;
         }
 
-        string sessionName = BuildSessionName(room, hasPassword ? password : string.Empty);
+        string mode = selectedRoomMode == RoomMode.Deathmatch ? GameModeRuntime.Deathmatch : GameModeRuntime.Classic;
+        string sessionName;
+        if (isCreateRoom)
+        {
+            sessionName = RoomSessionNameCodec.Encode(room, hasPassword ? password : string.Empty, mode);
+        }
+        else
+        {
+            sessionName = ResolveJoinSessionName(room, hasPassword ? password : string.Empty);
+            mode = RoomSessionNameCodec.DecodeMode(sessionName);
+        }
 
         int requestedMaxPlayers = isCreateRoom
             ? selectedMaxPlayers
             : Mathf.Max(1, launcher.MaxPlayers);
 
-        launcher.StartMatchmaking(sessionName, requestedMaxPlayers);
+        launcher.StartMatchmaking(sessionName, requestedMaxPlayers, mode);
 
         if (popupRoot != null)
         {
@@ -436,16 +446,6 @@ private void StartMatchmakingWithInputs(bool isCreateRoom)
                 popupText.text = matchmakingMessage;
             }
         }
-    }
-
-    private string BuildSessionName(string room, string password)
-    {
-        if (string.IsNullOrEmpty(password))
-        {
-            return room;
-        }
-
-        return $"{room}#{password}";
     }
 
     private void CancelMatchmaking()
@@ -955,12 +955,7 @@ private void SetRoomPanelMode(bool createMode)
 
         CreateRowCell(row.transform, (index + 1).ToString(), 60f, TextAlignmentOptions.Center);
 
-        string displayName = session.Name;
-        int separator = displayName.IndexOf(PrivateRoomSeparator, System.StringComparison.Ordinal);
-        if (separator >= 0)
-        {
-            displayName = displayName.Substring(0, separator);
-        }
+        string displayName = RoomSessionNameCodec.DecodeDisplayRoomName(session.Name);
 
         CreateRowCell(row.transform, $"{displayName} ({session.PlayerCount}/{session.MaxPlayers})", 430f, TextAlignmentOptions.Left);
 
@@ -973,10 +968,10 @@ private void SetRoomPanelMode(bool createMode)
     private void JoinSessionFromList(SessionInfo session)
     {
         string roomName = session.Name;
-        int separator = roomName.IndexOf(PrivateRoomSeparator, System.StringComparison.Ordinal);
-        if (separator >= 0)
+        string mode = RoomSessionNameCodec.DecodeMode(roomName);
+        string baseName = RoomSessionNameCodec.DecodeDisplayRoomName(roomName);
+        if (RoomSessionNameCodec.HasPassword(roomName))
         {
-            string baseName = roomName.Substring(0, separator);
             ShowPublicRoomPanel(false);
             roomPanelCreateMode = false;
             ShowRoomPanel(true);
@@ -999,7 +994,7 @@ private void SetRoomPanelMode(bool createMode)
 
         if (launcher != null)
         {
-            launcher.StartMatchmaking(roomName, Mathf.Max(1, session.MaxPlayers));
+            launcher.StartMatchmaking(roomName, Mathf.Max(1, session.MaxPlayers), mode);
         }
     }
 
@@ -1249,8 +1244,28 @@ private void ResolveMainMenuButtons()
 
     private void ToggleRoomMode()
     {
-        selectedRoomMode = selectedRoomMode == RoomMode.Classic ? RoomMode.Nuguri : RoomMode.Classic;
+        selectedRoomMode = selectedRoomMode == RoomMode.Classic ? RoomMode.Deathmatch : RoomMode.Classic;
         RefreshRoomModeUi();
+    }
+
+    private string ResolveJoinSessionName(string roomName, string password)
+    {
+        if (launcher == null || launcher.CachedSessionList == null)
+        {
+            return RoomSessionNameCodec.Encode(roomName, password, GameModeRuntime.Classic);
+        }
+
+        var sessions = launcher.CachedSessionList;
+        for (int i = 0; i < sessions.Count; i++)
+        {
+            string candidate = sessions[i].Name;
+            if (RoomSessionNameCodec.MatchesRoomAndPassword(candidate, roomName, password))
+            {
+                return candidate;
+            }
+        }
+
+        return RoomSessionNameCodec.Encode(roomName, password, GameModeRuntime.Classic);
     }
 
 private void RefreshRoomModeUi()
@@ -1264,7 +1279,7 @@ private void RefreshRoomModeUi()
         {
             modeDescriptionText.text = selectedRoomMode == RoomMode.Classic
                 ? "클래식 모드는 일반 플레이어는 술래를 피해 달아나고, 술래는 모든 일반 플레이어를 잡는 모드입니다."
-                : "데스매치 모드는 특수 규칙으로 진행되는 이벤트 모드입니다.";
+                : "데스매치 모드는 모든 플레이어가 근접 공격으로 생존 경쟁을 하는 모드입니다.";
         }
     }
 
@@ -1360,7 +1375,7 @@ private void UpdatePasswordVisibility()
                 continue;
             }
 
-            string existingBaseName = ExtractBaseRoomName(existingSessionName);
+            string existingBaseName = RoomSessionNameCodec.DecodeDisplayRoomName(existingSessionName);
             if (string.Equals(existingBaseName, roomName, System.StringComparison.OrdinalIgnoreCase))
             {
                 return true;
@@ -1368,22 +1383,6 @@ private void UpdatePasswordVisibility()
         }
 
         return false;
-    }
-
-    private static string ExtractBaseRoomName(string sessionName)
-    {
-        if (string.IsNullOrEmpty(sessionName))
-        {
-            return string.Empty;
-        }
-
-        int separator = sessionName.IndexOf(PrivateRoomSeparator, System.StringComparison.Ordinal);
-        if (separator <= 0)
-        {
-            return sessionName.Trim();
-        }
-
-        return sessionName.Substring(0, separator).Trim();
     }
 
     private void EnsureEventSystem()
