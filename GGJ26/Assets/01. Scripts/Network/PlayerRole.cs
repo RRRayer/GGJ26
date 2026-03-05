@@ -71,7 +71,7 @@ public class PlayerRole : NetworkBehaviour
 
         if (RoleAssigned == false)
         {
-            if (Runner == null || GetActivePlayerCount() < 2)
+            if (Runner == null || GetActivePlayerCount() == 0)
             {
                 return;
             }

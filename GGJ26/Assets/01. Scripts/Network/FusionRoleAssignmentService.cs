@@ -23,21 +23,22 @@ public class FusionRoleAssignmentService : MonoBehaviour
             return default;
         }
 
-        string sessionName = runner.SessionInfo.IsValid ? runner.SessionInfo.Name : string.Empty;
-        if (seekerLocked && string.Equals(lockedSessionName, sessionName))
-        {
-            return lockedSeeker;
-        }
-
-        if (runner.ActivePlayers.Count() < 2)
-        {
-            return default;
-        }
-
         var players = runner.ActivePlayers.OrderBy(p => p.RawEncoded).ToList();
         if (players.Count == 0)
         {
             return default;
+        }
+
+        // Solo sessions always assign the only participant as seeker.
+        if (players.Count == 1)
+        {
+            return players[0];
+        }
+
+        string sessionName = runner.SessionInfo.IsValid ? runner.SessionInfo.Name : string.Empty;
+        if (seekerLocked && string.Equals(lockedSessionName, sessionName) && players.Contains(lockedSeeker))
+        {
+            return lockedSeeker;
         }
 
         // Stable random by session so all peers pick the same seeker.
