@@ -8,12 +8,18 @@ public class SettingsSO : ScriptableObject
     private float masterVolume;
     private float musicVolume;
     private float sfxVolume;
+    private float voiceVolume;
+    private int voiceModeIndex;
+    private string voiceInputDeviceName;
     private int resolutionIndex;
     private int windowModeIndex;
     private bool isFullScreen;
     public float MasterVolume => masterVolume;
     public float MusicVolume => musicVolume;
     public float SfxVolume => sfxVolume;
+    public float VoiceVolume => voiceVolume;
+    public int VoiceModeIndex => voiceModeIndex;
+    public string VoiceInputDeviceName => voiceInputDeviceName;
     public int ResolutionIndex => resolutionIndex;
     public int WindowModeIndex => windowModeIndex;
     public bool IsFullScreen => isFullScreen;
@@ -23,6 +29,13 @@ public class SettingsSO : ScriptableObject
         this.masterVolume = masterVolume;
         this.musicVolume = musicVolume;
         this.sfxVolume = sfxVolume;
+    }
+
+    public void SaveVoiceSettings(float voiceVolume, int voiceModeIndex, string voiceInputDeviceName)
+    {
+        this.voiceVolume = Mathf.Clamp01(voiceVolume);
+        this.voiceModeIndex = Mathf.Clamp(voiceModeIndex, 0, 1);
+        this.voiceInputDeviceName = voiceInputDeviceName ?? string.Empty;
     }
 
     public void SaveGraphicsSettings(int resolutionIndex, bool isFullScreen)
@@ -49,6 +62,9 @@ public class SettingsSO : ScriptableObject
         this.masterVolume = saveFile.MasterVolume;
         this.musicVolume = saveFile.MusicVolume;
         this.sfxVolume = saveFile.SfxVolume;
+        this.voiceVolume = Mathf.Clamp01(saveFile.VoiceVolume);
+        this.voiceModeIndex = Mathf.Clamp(saveFile.VoiceModeIndex, 0, 1);
+        this.voiceInputDeviceName = saveFile.VoiceInputDeviceName ?? string.Empty;
         this.resolutionIndex = Mathf.Max(0, saveFile.ResolutionIndex);
 
         int loadedWindowModeIndex = saveFile.WindowModeIndex;
