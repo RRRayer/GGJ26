@@ -8,3 +8,11 @@
 .agent/
 .gemini/
 scripts/
+
+# Claude code
+.claude/
+CLAUDE.md
+.omc/
+
+# Codex
+.codex/
