@@ -34,7 +34,7 @@ public class FusionSpawnService : MonoBehaviour
     private NetworkObject greenNpcPrefab;
     private int npcsPerColor;
     private int maxPlayers;
-    private int minPlayersToAssignRoles = 2;
+    private int minPlayersToAssignRoles = 1;
 
     private bool spawnLayoutRoutineRunning;
     private bool pendingLocalSpawn;
@@ -99,7 +99,7 @@ public class FusionSpawnService : MonoBehaviour
         this.greenNpcPrefab = greenNpcPrefab;
         this.npcsPerColor = npcsPerColor;
         this.maxPlayers = Mathf.Max(1, maxPlayers);
-        this.minPlayersToAssignRoles = Mathf.Max(2, minPlayersToAssignRoles);
+        this.minPlayersToAssignRoles = Mathf.Max(1, minPlayersToAssignRoles);
     }
 
     public void SetMaxPlayers(int value)
@@ -286,7 +286,8 @@ public class FusionSpawnService : MonoBehaviour
             return false;
         }
 
-        if (runner.ActivePlayers.Count() < minPlayersToAssignRoles)
+        int activePlayerCount = runner.ActivePlayers.Count();
+        if (activePlayerCount < minPlayersToAssignRoles)
         {
             return false;
         }
