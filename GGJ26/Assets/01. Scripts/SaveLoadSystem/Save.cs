@@ -8,6 +8,7 @@ public class Save
     public float MusicVolume = 0.8f;
     public float SfxVolume = 1.0f;
     public int ResolutionIndex;
+    public int WindowModeIndex;
     public bool IsFullScreen;
     
     public string ToJson()
@@ -26,6 +27,7 @@ public class Save
         MusicVolume = settings.MusicVolume;
         SfxVolume = settings.SfxVolume;
         ResolutionIndex = settings.ResolutionIndex;
+        WindowModeIndex = settings.WindowModeIndex;
         IsFullScreen = settings.IsFullScreen;
     }
 }
