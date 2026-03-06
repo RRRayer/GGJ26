@@ -1049,6 +1049,7 @@ GameObject:
   - component: {fileID: 9100000000000000011}
   - component: {fileID: 9100000000000000010}
   - component: {fileID: 5344055087656702851}
+  - component: {fileID: 7165360394336456224}
   m_Layer: 7
   m_Name: PlayerArmature_Seeker
   m_TagString: Player
@@ -1131,6 +1132,9 @@ MonoBehaviour:
   sfxConfiguration: {fileID: 11400000, guid: 854501da1c4d88b498813056f7cc098d, type: 2}
   shootSfxCue: {fileID: 11400000, guid: 07ce1e08503ce9e4ab531c18151365e7, type: 2}
   hitSfxCue: {fileID: 11400000, guid: 83639e1cdc0b7644dbaaf8619be44c49, type: 2}
+  sharedCrosshairSize: 18
+  sharedCrosshairThickness: 2
+  sharedCrosshairColor: {r: 1, g: 1, b: 1, a: 1}
   rotateDuration: 0.05
 --- !u!114 &9100000000000000009
 MonoBehaviour:
@@ -1408,6 +1412,7 @@ MonoBehaviour:
   - {fileID: 8096708549146426077}
   - {fileID: 9100000000000000011}
   - {fileID: 5344055087656702851}
+  - {fileID: 7165360394336456224}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &2498353686968945355
 MonoBehaviour:
@@ -1559,6 +1564,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   enableDebugLogs: 1
+  unlimitedUsesForTesting: 0
   aimLayerMask:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -1586,6 +1592,25 @@ MonoBehaviour:
   crosshairThickness: 2
   spectatorCrosshairObjectName: SeekerCrosshairUI
   spectatorCrosshairRoot: {fileID: 0}
+--- !u!114 &7165360394336456224
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4416926081852918481}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cabc6b8ad54113b48b6af14afbc7d28f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  attackRange: 2.2
+  attackRadius: 0.45
+  attackCooldown: 0.6
+  attackMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  enableDebugLogs: 1
 --- !u!1 &4523139366846529165
 GameObject:
   m_ObjectHideFlags: 0

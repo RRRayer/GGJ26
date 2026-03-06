@@ -65,6 +65,11 @@ public class FusionRoleAssignmentService : MonoBehaviour
             return false;
         }
 
+        if (GameModeRuntime.IsDeathmatch)
+        {
+            return false;
+        }
+
         var seeker = GetDeterministicSeeker(runner);
         if (seeker == default)
         {
@@ -81,7 +86,7 @@ public class FusionRoleAssignmentService : MonoBehaviour
         }
 
         string playerId = player.RawEncoded.ToString();
-        bool isSeeker = IsSeeker(runner, player);
+        bool isSeeker = GameModeRuntime.IsDeathmatch ? false : IsSeeker(runner, player);
         playerStateManager.RegisterPlayerNetworked(playerId, isSeeker);
 
         if (runner.LocalPlayer == player)

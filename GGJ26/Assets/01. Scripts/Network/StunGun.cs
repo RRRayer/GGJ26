@@ -105,6 +105,12 @@ public class StunGun : NetworkBehaviour
             return;
         }
 
+        if (GameModeRuntime.IsDeathmatch)
+        {
+            SetCrosshairVisible(false);
+            return;
+        }
+
         UpdateCrosshair();
 
         if (role != null && role.IsSeeker == false)

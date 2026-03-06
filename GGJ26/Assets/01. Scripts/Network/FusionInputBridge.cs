@@ -41,6 +41,7 @@ public class FusionInputBridge : MonoBehaviour
 
         var inputs = playerObject.GetComponent<StarterAssetsInputs>();
         var playerInput = playerObject.GetComponent<UnityEngine.InputSystem.PlayerInput>();
+        var meleeAttack = playerObject.GetComponent<DeathmatchMeleeAttack>();
         if (inputs == null)
         {
             inputs = FindFirstObjectByType<StarterAssetsInputs>();
@@ -64,6 +65,13 @@ public class FusionInputBridge : MonoBehaviour
         {
             data.danceIndex = -1;
             data.npcDanceCommand = GetNpcDanceCommand(playerInput);
+        }
+
+        if (meleeAttack != null && meleeAttack.IsLocalAttackMoveLocked())
+        {
+            data.Move = Vector2.zero;
+            data.Sprint = false;
+            data.Jump = false;
         }
 
         // Use pending one-shot flags only to avoid duplicate presses across multiple Fusion ticks in one frame.

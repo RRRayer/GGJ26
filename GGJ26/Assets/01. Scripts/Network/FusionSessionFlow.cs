@@ -9,6 +9,7 @@ public class FusionSessionFlow : MonoBehaviour
 {
     [Header("Session")]
     [SerializeField] private string gameScenePath = "Assets/00. Scenes/GameScene.unity";
+    [SerializeField] private string deathmatchScenePath = "Assets/00. Scenes/DeathMatchGameScene.unity";
     [SerializeField] private string waitingRoomScenePath = "Assets/00. Scenes/WaitingRoom.unity";
 
     [Header("Voice")]
@@ -70,6 +71,11 @@ public class FusionSessionFlow : MonoBehaviour
         if (string.IsNullOrWhiteSpace(waitingRoomScenePath))
         {
             waitingRoomScenePath = "Assets/00. Scenes/WaitingRoom.unity";
+        }
+
+        if (string.IsNullOrWhiteSpace(deathmatchScenePath))
+        {
+            deathmatchScenePath = "Assets/00. Scenes/DeathMatchGameScene.unity";
         }
     }
 
@@ -181,13 +187,15 @@ public class FusionSessionFlow : MonoBehaviour
             return;
         }
 
-        var gameSceneIndex = SceneUtility.GetBuildIndexByScenePath(gameScenePath);
+        string targetScenePath = GameModeRuntime.IsDeathmatch ? deathmatchScenePath : gameScenePath;
+        var gameSceneIndex = SceneUtility.GetBuildIndexByScenePath(targetScenePath);
         if (gameSceneIndex < 0)
         {
-            Debug.LogError($"Game scene not in Build Settings: {gameScenePath}");
+            Debug.LogError($"Game scene not in Build Settings: {targetScenePath}");
             return;
         }
 
+        Debug.Log($"[FusionSessionFlow] StartGameScene mode={GameModeRuntime.CurrentMode}, scene={targetScenePath}");
         _ = runner.LoadScene(SceneRef.FromIndex(gameSceneIndex));
     }
 

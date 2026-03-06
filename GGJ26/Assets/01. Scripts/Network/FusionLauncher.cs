@@ -189,13 +189,15 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
         }
     }
 
-    public async void StartMatchmaking(string roomName, int maxPlayers)
+    public async void StartMatchmaking(string roomName, int maxPlayers, string mode = null)
     {
         if (sessionFlow == null)
         {
             return;
         }
 
+        string resolvedMode = string.IsNullOrWhiteSpace(mode) ? RoomSessionNameCodec.DecodeMode(roomName) : mode;
+        GameModeRuntime.SetMode(resolvedMode);
         Debug.Log($"[FusionLauncher] StartMatchmaking request: room='{roomName}', maxPlayers={maxPlayers}");
 
         this.maxPlayers = maxPlayers;
@@ -293,6 +295,11 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
             return true;
         }
 
+        if (activePath.EndsWith("DeathMatchGameScene.unity", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
         return activePath.EndsWith("Game.unity", StringComparison.OrdinalIgnoreCase);
     }
 
@@ -326,6 +333,11 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
         }
 
         lastScenePath = activePath;
+        if (runner != null && runner.SessionInfo.IsValid)
+        {
+            GameModeRuntime.SetMode(RoomSessionNameCodec.DecodeMode(runner.SessionInfo.Name));
+        }
+
         bool isGameScene = IsGameScene();
         ApplyVoiceModeForScene(isGameScene);
         nextVoiceProfileApplyTime = 0f;

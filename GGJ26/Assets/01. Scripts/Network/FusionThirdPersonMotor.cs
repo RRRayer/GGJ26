@@ -40,6 +40,7 @@ public class FusionThirdPersonMotor : NetworkBehaviour
     [Networked] private NetworkBool NetIsDancing { get; set; }
     [Networked] private int NetDanceIndex { get; set; }
     [Networked] private TickTimer SabotageStunTimer { get; set; }
+    [Networked] private TickTimer MeleeMoveLockTimer { get; set; }
 
     private CharacterController controller;
     private Animator animator;
@@ -200,7 +201,7 @@ public class FusionThirdPersonMotor : NetworkBehaviour
             return;
         }
 
-        bool lockMovement = GameManager.Instance != null && GameManager.Instance.IsGroupDanceActive;
+        bool lockMovement = (GameManager.Instance != null && GameManager.Instance.IsGroupDanceActive) || IsMeleeMoveLocked();
         // Seeker NPC dance command (disabled during group dance).
         if (lockMovement == false && input.npcDanceCommand && role != null && role.IsSeeker && Runner.SimulationTime >= NextNpcDanceCommandTime)
         {
@@ -462,6 +463,49 @@ public class FusionThirdPersonMotor : NetworkBehaviour
         }
 
         return SabotageStunTimer.ExpiredOrNotRunning(Runner) == false;
+    }
+
+    public void RequestMeleeMovementLock(float durationSeconds)
+    {
+        if (Object == null)
+        {
+            return;
+        }
+
+        if (Object.HasStateAuthority)
+        {
+            ApplyMeleeMovementLockInternal(durationSeconds);
+            return;
+        }
+
+        RpcRequestMeleeMovementLock(durationSeconds);
+    }
+
+    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
+    private void RpcRequestMeleeMovementLock(float durationSeconds)
+    {
+        ApplyMeleeMovementLockInternal(durationSeconds);
+    }
+
+    private void ApplyMeleeMovementLockInternal(float durationSeconds)
+    {
+        if (Object == null || Object.HasStateAuthority == false || Runner == null)
+        {
+            return;
+        }
+
+        float clamped = Mathf.Clamp(durationSeconds, 0.05f, 1.5f);
+        MeleeMoveLockTimer = TickTimer.CreateFromSeconds(Runner, clamped);
+    }
+
+    private bool IsMeleeMoveLocked()
+    {
+        if (Runner == null)
+        {
+            return false;
+        }
+
+        return MeleeMoveLockTimer.ExpiredOrNotRunning(Runner) == false;
     }
 
 }

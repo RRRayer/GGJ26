@@ -157,6 +157,7 @@ GameObject:
   - component: {fileID: 9200000000000002012}
   - component: {fileID: 2248712452871071898}
   - component: {fileID: 8658632631832437696}
+  - component: {fileID: 8647221991046659304}
   m_Layer: 6
   m_Name: PlayerArmature_Normal
   m_TagString: Player
@@ -529,6 +530,7 @@ MonoBehaviour:
   - {fileID: 3179968366648037960}
   - {fileID: 9200000000000002010}
   - {fileID: 8658632631832437696}
+  - {fileID: 8647221991046659304}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &425970233805690751
 MonoBehaviour:
@@ -878,6 +880,28 @@ MonoBehaviour:
   crosshairThickness: 2
   spectatorCrosshairObjectName: SpectatorSabotageCrosshair
   spectatorCrosshairRoot: {fileID: 0}
+--- !u!114 &8647221991046659304
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 456408205788446354}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cabc6b8ad54113b48b6af14afbc7d28f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  attackRange: 2.2
+  attackRadius: 0.45
+  attackCooldown: 0.6
+  attackActiveDuration: 0.22
+  attackMovementLockDuration: 1.3
+  attackMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  frontDotThreshold: 0.1
+  enableDebugLogs: 0
 --- !u!1 &752989075150667910
 GameObject:
   m_ObjectHideFlags: 0

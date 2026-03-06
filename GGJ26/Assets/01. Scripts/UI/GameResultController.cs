@@ -87,6 +87,11 @@ public class GameResultController : MonoBehaviour
 
     public bool TryResolveWinConditions(float remainingSeconds)
     {
+        if (GameModeRuntime.IsDeathmatch)
+        {
+            return false;
+        }
+
         if (playerStateManager == null)
         {
             playerStateManager = FindFirstObjectByType<PlayerStateManager>();
@@ -129,6 +134,33 @@ public class GameResultController : MonoBehaviour
         }
 
         return false;
+    }
+
+    public void EndGameDeathmatch(int winnerRawPlayerId, bool drawAllLose, float remainingSeconds)
+    {
+        if (HasEnded)
+        {
+            return;
+        }
+
+        HasEnded = true;
+        if (gameStateController != null)
+        {
+            gameStateController.SetState(GameState.Ending);
+        }
+
+        bool localWin = false;
+        if (drawAllLose == false && playerStateManager != null && playerStateManager.TryGetLocalPlayer(out var localState))
+        {
+            localWin = string.Equals(localState.PlayerId, winnerRawPlayerId.ToString(), System.StringComparison.Ordinal);
+        }
+
+        float avgReaction = statsManager != null ? statsManager.GetAverageReactionMs() : 0f;
+        List<MaskColor> history = statsManager != null ? statsManager.GetMaskHistory() : new List<MaskColor>();
+        var result = new GameResultData(false, localWin, remainingSeconds, avgReaction, history);
+
+        onGameResult?.RaiseEvent(result);
+        onGameEnded?.RaiseEvent();
     }
 
     private PlayerRole FindLocalPlayerRole()
