@@ -208,7 +208,7 @@ public class PlayerElimination : NetworkBehaviour
                 {
                     spectatorSabotageController.SetSpectatorAimOrigin(spectatorController.transform);
                 }
-                if (_playerRole != null && !_playerRole.IsSeeker)
+                if (_playerRole != null && _playerRole.IsSeeker == false)
                 {
                     var deadUI = FindFirstObjectByType<UIDead>();
                     if (deadUI != null)

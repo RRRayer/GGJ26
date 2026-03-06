@@ -858,7 +858,8 @@ MonoBehaviour:
     m_Bits: 4294967295
   aimDistance: 60
   smokeSpawnForwardOffset: 5
-  shoeProjectilePrefab: {fileID: 1077857044643151974, guid: d2b11640890aae846aa0fee9fe7029f3, type: 3}
+  shoeProjectilePrefab: {fileID: 3420073209668441316, guid: f46a9b857611d234191ff125b1478341, type: 3}
+  shoeTemplateObjectName: Shoe
   shoeStunSeconds: 0.5
   shoeKnockbackSpeed: 2.4
   shoeProjectileSpeed: 18

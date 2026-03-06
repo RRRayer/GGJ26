@@ -284,6 +284,7 @@ GameObject:
   - component: {fileID: 106689027}
   - component: {fileID: 106689026}
   - component: {fileID: 106689029}
+  - component: {fileID: 106689030}
   m_Layer: 0
   m_Name: Dead
   m_TagString: Untagged
@@ -392,6 +393,36 @@ MonoBehaviour:
   notDeadCanvas:
   - {fileID: 1227170226}
   - {fileID: 1227170227}
+--- !u!114 &106689030
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 106689024}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c9b5e9a87a424d749c1d7f9f8e6a1b21, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  shoeSprite: {fileID: 21300000, guid: dfc97fc3e93a3fa43b8e5851f0ab29e4, type: 3}
+  smokeSprite: {fileID: 21300000, guid: 0be056719137a61479e5950dea34b7f4, type: 3}
+  danceSprite: {fileID: 21300000, guid: e7380c03ebdfd6948a716a5c06b4487b, type: 3}
+  keyOneSprite: {fileID: -1196241393, guid: 069a00c4a21d8654bbe27600f3ba7103, type: 3}
+  keyTwoSprite: {fileID: 13857534, guid: 069a00c4a21d8654bbe27600f3ba7103, type: 3}
+  keyThreeSprite: {fileID: -151394201, guid: 069a00c4a21d8654bbe27600f3ba7103, type: 3}
+  rootAnchoredPosition: {x: 0, y: 96}
+  iconSize: {x: 120, y: 120}
+  keySize: {x: 42, y: 56}
+  slotSpacing: 150
+  keyOffset: {x: 0, y: -12}
+  titleOffset: {x: 0, y: 150}
+  titleFontSize: 36
+  availableColor: {r: 1, g: 1, b: 1, a: 1}
+  usedColor: {r: 1, g: 1, b: 1, a: 0.28}
+  selectedOutlineColor: {r: 1, g: 0.3, b: 0.3, a: 1}
+  idleOutlineColor: {r: 0, g: 0, b: 0, a: 0}
+  outlineDistance: {x: 6, y: 6}
 --- !u!1 &123334091
 GameObject:
   m_ObjectHideFlags: 0
@@ -652,7 +683,6 @@ MonoBehaviour:
   proximityMinDistance: 5
   proximityMaxDistance: 30
   voiceOutputMixerGroup: {fileID: 24300002, guid: d9084dee7259d2b43a99e89cd85b22c0, type: 2}
-  voiceSourceVolume: 1.7
 --- !u!4 &148525648
 Transform:
   m_ObjectHideFlags: 0

@@ -6,9 +6,6 @@ public class UISettingManger : MonoBehaviour
     [Header("UI Components")]
     [SerializeField] private UISettingsController settingsPanel;
 
-    [Header("Input")]
-    [SerializeField] private InputReader inputReader;
-
     private Action onClosed;
 
     public bool IsOpen => settingsPanel != null && settingsPanel.gameObject.activeSelf;
@@ -16,14 +13,6 @@ public class UISettingManger : MonoBehaviour
     private void Awake()
     {
         ResolveReferences();
-    }
-
-    private void Start()
-    {
-        if (settingsPanel != null)
-        {
-            settingsPanel.gameObject.SetActive(false);
-        }
     }
 
     private void OnDisable()
@@ -88,11 +77,6 @@ public class UISettingManger : MonoBehaviour
         {
             settingsPanel = FindFirstObjectByType<UISettingsController>(FindObjectsInactive.Include);
         }
-
-        if (inputReader == null)
-        {
-            inputReader = FindInputReaderByName("InputReader");
-        }
     }
 
     private void BindEvents()
@@ -100,10 +84,6 @@ public class UISettingManger : MonoBehaviour
         UnbindEvents();
 
         settingsPanel.CloseButtonAction += OnCloseRequested;
-        if (inputReader != null)
-        {
-            inputReader.CancelEvent += OnCloseRequested;
-        }
     }
 
     private void UnbindEvents()
@@ -111,11 +91,6 @@ public class UISettingManger : MonoBehaviour
         if (settingsPanel != null)
         {
             settingsPanel.CloseButtonAction -= OnCloseRequested;
-        }
-
-        if (inputReader != null)
-        {
-            inputReader.CancelEvent -= OnCloseRequested;
         }
     }
 
@@ -133,21 +108,6 @@ public class UISettingManger : MonoBehaviour
         {
             T candidate = objects[i];
             if (candidate != null && candidate.gameObject.name == objectName)
-            {
-                return candidate;
-            }
-        }
-
-        return null;
-    }
-
-    private InputReader FindInputReaderByName(string assetName)
-    {
-        InputReader[] inputReaders = Resources.FindObjectsOfTypeAll<InputReader>();
-        for (int i = 0; i < inputReaders.Length; i++)
-        {
-            InputReader candidate = inputReaders[i];
-            if (candidate != null && candidate.name == assetName)
             {
                 return candidate;
             }

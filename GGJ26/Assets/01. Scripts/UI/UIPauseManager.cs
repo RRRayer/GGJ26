@@ -100,6 +100,7 @@ public class UIPauseManager : MonoBehaviour
             return;
         }
 
+        UnbindPauseEvents();
         pausePanel.gameObject.SetActive(false);
         settingManager.OpenFromPause(ReopenPausePanel);
     }
@@ -126,6 +127,7 @@ public class UIPauseManager : MonoBehaviour
         }
 
         pausePanel.gameObject.SetActive(true);
+        BindPauseEvents();
     }
 
     private void SetPauseState(bool isPause)
@@ -201,3 +203,4 @@ public class UIPauseManager : MonoBehaviour
         return null;
     }
 }
+

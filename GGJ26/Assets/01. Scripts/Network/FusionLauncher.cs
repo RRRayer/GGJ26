@@ -56,8 +56,6 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
     [SerializeField] private float proximityMinDistance = 2f;
     [SerializeField] private float proximityMaxDistance = 18f;
     [SerializeField] private AudioMixerGroup voiceOutputMixerGroup;
-    [Range(0f, 2f)]
-    [SerializeField] private float voiceSourceVolume = 1f;
 
     public event Action<bool> MatchmakingStateChanged;
     public event Action<IReadOnlyList<SessionInfo>> SessionListUpdated;
@@ -546,7 +544,7 @@ public class FusionLauncher : MonoBehaviour, INetworkRunnerCallbacks
                 source.outputAudioMixerGroup = voiceOutputMixerGroup;
             }
 
-            source.volume = voiceSourceVolume;
+            // Voice output volume is controlled by VoiceRuntimeSettingsController.
             source.spatialBlend = 1f;
             source.rolloffMode = AudioRolloffMode.Logarithmic;
             source.minDistance = proximityMinDistance;

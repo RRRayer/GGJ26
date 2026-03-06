@@ -1,63 +1,148 @@
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.UI;
 
 public class UISettingsController : MonoBehaviour
 {
-    [Header("UI Components")]
-    [SerializeField] private UIGenericButton backButton;
-    [SerializeField] private UIGenericButton saveButton;
-    [SerializeField] private UIGenericButton resetButton;
-    
-    [Header("Settings")]
-    [SerializeField] private SettingsSO currentSettings;
-    [SerializeField] private UISettingsAudioComponent audioComponent;
-    [SerializeField] private UISettingsGraphicsComponent graphicsComponent;
-    
-    [Header("Broadcasting on")]
-    [SerializeField] private VoidEventChannelSO saveSettingsEvent;
+    [Header("Tab Buttons")]
+    [SerializeField] private Button gameplayButton;
+    [SerializeField] private Button soundButton;
+    [SerializeField] private Button closeButton;
+
+    [Header("Tab Panels")]
+    [SerializeField] private GameObject gameplayPanel;
+    [SerializeField] private GameObject soundPanel;
 
     public event UnityAction CloseButtonAction;
 
+    private void Awake()
+    {
+        ResolveReferences();
+    }
+
     private void OnEnable()
     {
-        backButton.Clicked  += CloseSettingPanel;
-        saveButton.Clicked  += SaveSettings;
-        resetButton.Clicked += ResetSettings;
-
-        ShowSettingPanel();
+        BindEvents();
+        ShowGameplayPanel();
     }
 
     private void OnDisable()
     {
-        backButton.Clicked  -= CloseSettingPanel;
-        saveButton.Clicked  -= SaveSettings;
-        resetButton.Clicked -= ResetSettings;
+        UnbindEvents();
     }
 
-    private void ShowSettingPanel()
+    private void BindEvents()
     {
-        audioComponent.Setup(currentSettings.MasterVolume, currentSettings.MusicVolume, currentSettings.SfxVolume);
-        graphicsComponent.Setup(currentSettings.ResolutionIndex, currentSettings.IsFullScreen);
+        UnbindEvents();
+
+        if (gameplayButton != null)
+        {
+            gameplayButton.onClick.AddListener(ShowGameplayPanel);
+        }
+
+        if (soundButton != null)
+        {
+            soundButton.onClick.AddListener(ShowSoundPanel);
+        }
+
+        if (closeButton != null)
+        {
+            closeButton.onClick.AddListener(OnCloseRequested);
+        }
     }
 
-    private void CloseSettingPanel()
+    private void UnbindEvents()
+    {
+        if (gameplayButton != null)
+        {
+            gameplayButton.onClick.RemoveListener(ShowGameplayPanel);
+        }
+
+        if (soundButton != null)
+        {
+            soundButton.onClick.RemoveListener(ShowSoundPanel);
+        }
+
+        if (closeButton != null)
+        {
+            closeButton.onClick.RemoveListener(OnCloseRequested);
+        }
+    }
+
+    private void ShowGameplayPanel()
+    {
+        SetPanelState(true);
+    }
+
+    private void ShowSoundPanel()
+    {
+        SetPanelState(false);
+    }
+
+    private void SetPanelState(bool showGameplayPanel)
+    {
+        if (gameplayPanel != null)
+        {
+            gameplayPanel.SetActive(showGameplayPanel);
+        }
+
+        if (soundPanel != null)
+        {
+            soundPanel.SetActive(showGameplayPanel == false);
+        }
+    }
+
+    private void OnCloseRequested()
     {
         CloseButtonAction?.Invoke();
     }
 
-    private void SaveSettings()
+    private void ResolveReferences()
     {
-        audioComponent.SaveVolumes(currentSettings);
-        graphicsComponent.SaveGraphics(currentSettings);
-        
-        saveSettingsEvent.RaiseEvent();
+        if (gameplayButton == null)
+        {
+            gameplayButton = FindButtonByPath("BtnContainer/Button");
+        }
+
+        if (soundButton == null)
+        {
+            soundButton = FindButtonByPath("BtnContainer/Button (1)");
+        }
+
+        if (gameplayPanel == null)
+        {
+            gameplayPanel = FindByName("GamePlayContainer");
+        }
+
+        if (soundPanel == null)
+        {
+            soundPanel = FindByName("SoundContainer");
+        }
     }
 
-    private void ResetSettings()
+    private Button FindButtonByPath(string path)
     {
-        audioComponent.ResetVolumes(currentSettings);
-        graphicsComponent.ResetGraphics(currentSettings);
-        
-        saveSettingsEvent.RaiseEvent();
+        Transform target = transform.Find(path);
+        if (target == null)
+        {
+            return null;
+        }
+
+        return target.GetComponent<Button>();
+    }
+
+    private GameObject FindByName(string objectName)
+    {
+        Transform[] children = GetComponentsInChildren<Transform>(true);
+        for (int i = 0; i < children.Length; i++)
+        {
+            Transform candidate = children[i];
+            if (candidate != null && candidate.name == objectName)
+            {
+                return candidate.gameObject;
+            }
+        }
+
+        return null;
     }
 }

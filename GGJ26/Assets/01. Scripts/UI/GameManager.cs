@@ -157,6 +157,21 @@ public class GameManager : NetworkBehaviour
             Debug.Log($"[GameManager] Local player is known. Local ID: {localState.PlayerId}. Comparing with updated ID: {updatedState.PlayerId}.");
             if (updatedState.PlayerId == localState.PlayerId)
             {
+                if (updatedState.IsDead)
+                {
+                    Debug.Log($"[GameManager] Local player death state received. IsSeeker={updatedState.IsSeeker}");
+                    if (updatedState.IsSeeker == false)
+                    {
+                        var deadUI = FindFirstObjectByType<UIDead>();
+                        if (deadUI != null)
+                        {
+                            deadUI.ShowDeadUI();
+                        }
+                    }
+
+                    return;
+                }
+
                 if (uiCanvasManager != null)
                 {
                     Debug.Log($"[GameManager] Confirmed local player state change. Role is now Seeker = {updatedState.IsSeeker}. Updating UI.");
