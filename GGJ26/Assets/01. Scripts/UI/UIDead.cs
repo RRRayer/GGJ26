@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using UnityEngine;
 
 public class UIDead : MonoBehaviour
@@ -9,7 +8,17 @@ public class UIDead : MonoBehaviour
     public void ShowDeadUI()
     {
         Debug.Log("Showing Dead UI");
-        foreach (var c in notDeadCanvas) c.enabled = false;
-        CanvasDead.enabled = true;
+        foreach (var c in notDeadCanvas)
+        {
+            if (c != null)
+            {
+                c.enabled = false;
+            }
+        }
+
+        if (CanvasDead != null)
+        {
+            CanvasDead.enabled = true;
+        }
     }
 }

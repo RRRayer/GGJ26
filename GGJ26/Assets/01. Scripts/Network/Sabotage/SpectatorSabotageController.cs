@@ -17,14 +17,16 @@ public class SpectatorSabotageController : NetworkBehaviour
 
     [Header("Shoe Toss")]
     [SerializeField] private Object shoeProjectilePrefab;
+    [SerializeField] private string shoeTemplateObjectName = "Shoe";
     [SerializeField] private float shoeStunSeconds = 0.5f;
     [SerializeField] private float shoeKnockbackSpeed = 2.4f;
-    [SerializeField] private float shoeProjectileSpeed = 18f;
+    [SerializeField] private float shoeProjectileSpeed = 24f;
     [SerializeField] private float shoeProjectileLifetime = 1.2f;
-    [SerializeField] private float shoeProjectileGravity = 9.8f;
+    [SerializeField] private float shoeProjectileGravity = 4.2f;
     [SerializeField] private float shoeSpawnForwardOffset = 0.8f;
     [SerializeField] private float shoeHitRadius = 0.45f;
     [SerializeField] private float shoeHitDistance = 22f;
+    [SerializeField] private Vector3 shoeSpinDegreesPerSecond = new Vector3(1080f, 540f, 720f);
 
     [Header("Ghost Smoke")]
     [SerializeField] private Object ghostSmokePrefab;
@@ -59,6 +61,7 @@ public class SpectatorSabotageController : NetworkBehaviour
     private void Awake()
     {
         elimination = GetComponent<PlayerElimination>();
+        TryAutoAssignShoeProjectilePrefab();
         TryAutoAssignGhostSmokePrefab();
         ResolveCrosshairReferences();
     }
@@ -452,7 +455,11 @@ public class SpectatorSabotageController : NetworkBehaviour
         prefab = null;
         if (shoeProjectilePrefab == null)
         {
-            return false;
+            TryAutoAssignShoeProjectilePrefab();
+            if (shoeProjectilePrefab == null)
+            {
+                return false;
+            }
         }
 
         if (shoeProjectilePrefab is GameObject asGameObject)
@@ -468,6 +475,27 @@ public class SpectatorSabotageController : NetworkBehaviour
         }
 
         return false;
+    }
+
+    private void TryAutoAssignShoeProjectilePrefab()
+    {
+        if (string.IsNullOrWhiteSpace(shoeTemplateObjectName))
+        {
+            return;
+        }
+
+        var found = GameObject.Find(shoeTemplateObjectName);
+        if (found == null)
+        {
+            return;
+        }
+
+        shoeProjectilePrefab = found;
+
+        if (enableDebugLogs)
+        {
+            Debug.Log($"[Sabotage] Auto assigned shoe projectile template: {found.name}", this);
+        }
     }
 
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
@@ -649,6 +677,7 @@ public class SpectatorSabotageController : NetworkBehaviour
         float remaining = Mathf.Max(0.05f, lifetime);
         Vector3 velocity = (direction.sqrMagnitude > 0.0001f ? direction.normalized : Vector3.forward) * Mathf.Max(0.1f, speed);
         float gravity = Mathf.Max(0f, shoeProjectileGravity);
+        Vector3 spin = shoeSpinDegreesPerSecond;
         bool canApplyHit = Object != null && Object.HasStateAuthority;
 
         while (projectile != null && remaining > 0f)
@@ -659,7 +688,8 @@ public class SpectatorSabotageController : NetworkBehaviour
             projectile.position += velocity * dt;
             if (velocity.sqrMagnitude > 0.0001f)
             {
-                projectile.rotation = Quaternion.LookRotation(velocity.normalized, Vector3.up);
+                Quaternion travelRotation = Quaternion.LookRotation(velocity.normalized, Vector3.up);
+                projectile.rotation = travelRotation * Quaternion.Euler(spin * (lifetime - remaining));
             }
 
             if (canApplyHit && TryApplyShoeHit(prevPos, projectile.position, velocity))
