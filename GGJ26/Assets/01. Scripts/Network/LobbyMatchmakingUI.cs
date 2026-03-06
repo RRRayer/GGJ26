@@ -9,6 +9,8 @@ using System.Collections.Generic;
 
 public class LobbyMatchmakingUI : MonoBehaviour
 {
+    private const string DefaultRoomName = "Let's Dance";
+
     private enum RoomMode
     {
         Classic = 0,
@@ -63,11 +65,21 @@ public class LobbyMatchmakingUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI popupText;
     [SerializeField] private Button cancelButton;
 
+    [Header("Password Join Popup (optional)")]
+    [SerializeField] private GameObject passwordPopupRoot;
+    [SerializeField] private TextMeshProUGUI passwordPopupText;
+    [SerializeField] private TMP_InputField passwordPopupInput;
+    [SerializeField] private Button passwordPopupConfirmButton;
+    [SerializeField] private Button passwordPopupCloseButton;
+
     private const string NicknameKey = "GGJ26.Nickname";
     private const string PrivateRoomSeparator = "#";
+    private const string SessionIdSeparator = "@";
     private RoomMode selectedRoomMode = RoomMode.Classic;
     private bool roomPanelCreateMode = true;
     private int escapeHandledFrame = -1;
+    private string pendingPasswordJoinSessionName;
+    private int pendingPasswordJoinMaxPlayers = 1;
 
     public bool IsEscapeBlockingPanelOpen
     {
@@ -75,7 +87,8 @@ public class LobbyMatchmakingUI : MonoBehaviour
         {
             bool isRoomPanelOpen = roomPanel != null && roomPanel.activeInHierarchy;
             bool isPublicRoomPanelOpen = publicRoomPanel != null && publicRoomPanel.activeInHierarchy;
-            return isRoomPanelOpen || isPublicRoomPanelOpen;
+            bool isPasswordPopupOpen = passwordPopupRoot != null && passwordPopupRoot.activeInHierarchy;
+            return isRoomPanelOpen || isPublicRoomPanelOpen || isPasswordPopupOpen;
         }
     }
 
@@ -108,11 +121,17 @@ public class LobbyMatchmakingUI : MonoBehaviour
         ApplyRoomInputConstraints();
         RefreshMaxPlayersUi();
         RefreshRoomModeUi();
+        ResetCreateRoomDefaults();
         UpdatePasswordVisibility();
 
         if (popupRoot != null)
         {
             popupRoot.SetActive(false);
+        }
+
+        if (passwordPopupRoot != null)
+        {
+            passwordPopupRoot.SetActive(false);
         }
 
         LoadNickname();
@@ -173,6 +192,16 @@ private void OnEnable()
         if (privateRoomToggle != null)
         {
             privateRoomToggle.onValueChanged.AddListener(OnPrivateRoomToggleChanged);
+        }
+
+        if (passwordPopupConfirmButton != null)
+        {
+            passwordPopupConfirmButton.onClick.AddListener(ConfirmPasswordJoin);
+        }
+
+        if (passwordPopupCloseButton != null)
+        {
+            passwordPopupCloseButton.onClick.AddListener(ClosePasswordJoinPopup);
         }
 
         if (modeToggleButton != null)
@@ -261,6 +290,16 @@ private void OnDisable()
             privateRoomToggle.onValueChanged.RemoveListener(OnPrivateRoomToggleChanged);
         }
 
+        if (passwordPopupConfirmButton != null)
+        {
+            passwordPopupConfirmButton.onClick.RemoveListener(ConfirmPasswordJoin);
+        }
+
+        if (passwordPopupCloseButton != null)
+        {
+            passwordPopupCloseButton.onClick.RemoveListener(ClosePasswordJoinPopup);
+        }
+
         if (modeToggleButton != null)
         {
             modeToggleButton.onClick.RemoveListener(ToggleRoomMode);
@@ -296,6 +335,11 @@ private void OnDisable()
         if (popupRoot != null)
         {
             popupRoot.SetActive(false);
+        }
+
+        if (passwordPopupRoot != null)
+        {
+            passwordPopupRoot.SetActive(false);
         }
     }
 
@@ -366,6 +410,7 @@ private void JoinRoom()
         roomPanelCreateMode = true;
         ShowRoomPanel(true);
         SetRoomPanelMode(true);
+        ResetCreateRoomDefaults();
         UpdatePasswordVisibility();
         FocusRoomInput();
     }
@@ -397,6 +442,15 @@ private void StartMatchmakingWithInputs(bool isCreateRoom)
         }
 
         string room = roomNameInput != null ? roomNameInput.text.Trim() : string.Empty;
+        if (isCreateRoom && string.IsNullOrEmpty(room))
+        {
+            room = DefaultRoomName;
+            if (roomNameInput != null)
+            {
+                roomNameInput.text = room;
+            }
+        }
+
         if (string.IsNullOrEmpty(room))
         {
             ShowPopup("Please enter a room name.");
@@ -414,13 +468,7 @@ private void StartMatchmakingWithInputs(bool isCreateRoom)
             return;
         }
 
-        if (isCreateRoom && HasRoomNameConflict(room))
-        {
-            ShowPopup("A room with the same name already exists.");
-            return;
-        }
-
-        string sessionName = BuildSessionName(room, hasPassword ? password : string.Empty);
+        string sessionName = BuildSessionName(room, hasPassword ? password : string.Empty, isCreateRoom);
 
         int requestedMaxPlayers = isCreateRoom
             ? selectedMaxPlayers
@@ -438,15 +486,117 @@ private void StartMatchmakingWithInputs(bool isCreateRoom)
         }
     }
 
-    private string BuildSessionName(string room, string password)
+    private string BuildSessionName(string room, string password, bool isCreateRoom)
     {
-        if (string.IsNullOrEmpty(password))
+        string baseName = string.IsNullOrEmpty(password)
+            ? room
+            : $"{room}{PrivateRoomSeparator}{password}";
+
+        if (isCreateRoom == false)
         {
-            return room;
+            return baseName;
         }
 
-        return $"{room}#{password}";
+        return $"{baseName}{SessionIdSeparator}{System.Guid.NewGuid():N}";
     }
+
+    private bool HasRoomNameConflict(string roomName)
+    {
+        if (launcher == null || string.IsNullOrWhiteSpace(roomName))
+        {
+            return false;
+        }
+
+        var sessions = launcher.CachedSessionList;
+        if (sessions == null)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < sessions.Count; i++)
+        {
+            string existingSessionName = sessions[i].Name;
+            if (string.IsNullOrWhiteSpace(existingSessionName))
+            {
+                continue;
+            }
+
+            string existingBaseName = ExtractBaseRoomName(existingSessionName);
+            if (string.Equals(existingBaseName, roomName, System.StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static string ExtractBaseRoomName(string sessionName)
+    {
+        if (string.IsNullOrEmpty(sessionName))
+        {
+            return string.Empty;
+        }
+
+        string trimmed = sessionName.Trim();
+        int sessionIdSeparator = trimmed.IndexOf(SessionIdSeparator, System.StringComparison.Ordinal);
+        if (sessionIdSeparator > 0)
+        {
+            trimmed = trimmed.Substring(0, sessionIdSeparator).Trim();
+        }
+
+        int passwordSeparator = trimmed.IndexOf(PrivateRoomSeparator, System.StringComparison.Ordinal);
+        if (passwordSeparator <= 0)
+        {
+            return trimmed;
+        }
+
+        return trimmed.Substring(0, passwordSeparator).Trim();
+    }
+
+    private static string ExtractPasswordFromSessionName(string sessionName)
+    {
+        if (string.IsNullOrEmpty(sessionName))
+        {
+            return string.Empty;
+        }
+
+        string trimmed = sessionName.Trim();
+        int sessionIdSeparator = trimmed.IndexOf(SessionIdSeparator, System.StringComparison.Ordinal);
+        if (sessionIdSeparator > 0)
+        {
+            trimmed = trimmed.Substring(0, sessionIdSeparator).Trim();
+        }
+
+        int passwordSeparator = trimmed.IndexOf(PrivateRoomSeparator, System.StringComparison.Ordinal);
+        if (passwordSeparator < 0 || passwordSeparator >= trimmed.Length - 1)
+        {
+            return string.Empty;
+        }
+
+        return trimmed.Substring(passwordSeparator + 1).Trim();
+    }
+
+    private void EnsureEventSystem()
+    {
+        var eventSystem = FindFirstObjectByType<EventSystem>();
+        if (eventSystem == null)
+        {
+            var eventSystemObject = new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
+            eventSystem = eventSystemObject.GetComponent<EventSystem>();
+            eventSystemObject.hideFlags = HideFlags.DontSave;
+        }
+
+        if (FindFirstObjectByType<BaseInput>() == null && eventSystem != null)
+        {
+            var module = eventSystem.GetComponent<InputSystemUIInputModule>();
+            if (module == null)
+            {
+                eventSystem.gameObject.AddComponent<InputSystemUIInputModule>();
+            }
+        }
+    }
+    
 
     private void CancelMatchmaking()
     {
@@ -614,6 +764,17 @@ private void SetRoomPanelMode(bool createMode)
         roomPasswordInput.ActivateInputField();
     }
 
+    private void FocusPasswordJoinPopupInput()
+    {
+        if (passwordPopupInput == null || passwordPopupInput.gameObject.activeInHierarchy == false)
+        {
+            return;
+        }
+
+        passwordPopupInput.Select();
+        passwordPopupInput.ActivateInputField();
+    }
+
     private void HandleEscapeKey()
     {
         if (Keyboard.current == null || Keyboard.current.escapeKey.wasPressedThisFrame == false)
@@ -624,6 +785,13 @@ private void SetRoomPanelMode(bool createMode)
         if (roomPanel != null && roomPanel.activeInHierarchy)
         {
             CloseRoomPanel();
+            escapeHandledFrame = Time.frameCount;
+            return;
+        }
+
+        if (passwordPopupRoot != null && passwordPopupRoot.activeInHierarchy)
+        {
+            ClosePasswordJoinPopup();
             escapeHandledFrame = Time.frameCount;
             return;
         }
@@ -781,6 +949,8 @@ private void SetRoomPanelMode(bool createMode)
             cancelButton = CreateButton(popupRoot.transform, "PopupCancel", "Cancel", new Vector2(0.5f, 0.3f));
         }
 
+        ResolvePasswordPopupUiReferences();
+
         ResolvePublicRoomUiReferences();
     }
 
@@ -896,6 +1066,40 @@ private void SetRoomPanelMode(bool createMode)
         }
     }
 
+    private void ResolvePasswordPopupUiReferences()
+    {
+        if (passwordPopupRoot == null)
+        {
+            passwordPopupRoot = FindGameObjectByName("PasswordJoinPopup");
+        }
+
+        if (passwordPopupRoot == null)
+        {
+            Debug.LogWarning("[LobbyMatchmakingUI] PasswordJoinPopup is not assigned. Please wire scene UI objects.");
+            return;
+        }
+
+        if (passwordPopupText == null)
+        {
+            passwordPopupText = FindChildComponentByName<TextMeshProUGUI>(passwordPopupRoot.transform, "PasswordJoinText");
+        }
+
+        if (passwordPopupInput == null)
+        {
+            passwordPopupInput = FindChildComponentByName<TMP_InputField>(passwordPopupRoot.transform, "PasswordJoinInput");
+        }
+
+        if (passwordPopupConfirmButton == null)
+        {
+            passwordPopupConfirmButton = FindChildComponentByName<Button>(passwordPopupRoot.transform, "PasswordJoinConfirmButton");
+        }
+
+        if (passwordPopupCloseButton == null)
+        {
+            passwordPopupCloseButton = FindChildComponentByName<Button>(passwordPopupRoot.transform, "PasswordJoinCloseButton");
+        }
+    }
+
     private void RebuildPublicRoomList(IReadOnlyList<SessionInfo> sessions)
     {
         if (publicRoomListContent == null)
@@ -955,12 +1159,7 @@ private void SetRoomPanelMode(bool createMode)
 
         CreateRowCell(row.transform, (index + 1).ToString(), 60f, TextAlignmentOptions.Center);
 
-        string displayName = session.Name;
-        int separator = displayName.IndexOf(PrivateRoomSeparator, System.StringComparison.Ordinal);
-        if (separator >= 0)
-        {
-            displayName = displayName.Substring(0, separator);
-        }
+        string displayName = ExtractBaseRoomName(session.Name);
 
         CreateRowCell(row.transform, $"{displayName} ({session.PlayerCount}/{session.MaxPlayers})", 430f, TextAlignmentOptions.Left);
 
@@ -976,24 +1175,7 @@ private void SetRoomPanelMode(bool createMode)
         int separator = roomName.IndexOf(PrivateRoomSeparator, System.StringComparison.Ordinal);
         if (separator >= 0)
         {
-            string baseName = roomName.Substring(0, separator);
-            ShowPublicRoomPanel(false);
-            roomPanelCreateMode = false;
-            ShowRoomPanel(true);
-            SetRoomPanelMode(false);
-            if (roomNameInput != null)
-            {
-                roomNameInput.text = baseName;
-            }
-
-            if (roomPasswordInput != null)
-            {
-                roomPasswordInput.text = string.Empty;
-            }
-
-            UpdatePasswordVisibility();
-            FocusPasswordInput();
-            ShowPopup("Enter password to join this room.");
+            OpenPasswordJoinPopup(session);
             return;
         }
 
@@ -1012,9 +1194,10 @@ private void SetRoomPanelMode(bool createMode)
     {
         ShowPublicRoomPanel(false);
         ShowNicknamePanel(false);
-        roomPanelCreateMode = false;
+        roomPanelCreateMode = true;
         ShowRoomPanel(true);
-        SetRoomPanelMode(false);
+        SetRoomPanelMode(true);
+        ResetCreateRoomDefaults();
         UpdatePasswordVisibility();
         FocusRoomInput();
     }
@@ -1029,6 +1212,75 @@ private void SetRoomPanelMode(bool createMode)
         }
 
         RebuildPublicRoomList(null);
+    }
+
+    private void OpenPasswordJoinPopup(SessionInfo session)
+    {
+        pendingPasswordJoinSessionName = session.Name;
+        pendingPasswordJoinMaxPlayers = Mathf.Max(1, session.MaxPlayers);
+
+        if (passwordPopupText != null)
+        {
+            passwordPopupText.text = $"Enter the password for \"{ExtractBaseRoomName(session.Name)}\".";
+        }
+
+        if (passwordPopupInput != null)
+        {
+            passwordPopupInput.text = string.Empty;
+        }
+
+        if (passwordPopupRoot != null)
+        {
+            passwordPopupRoot.SetActive(true);
+        }
+
+        FocusPasswordJoinPopupInput();
+    }
+
+    private void ConfirmPasswordJoin()
+    {
+        if (launcher == null || string.IsNullOrEmpty(pendingPasswordJoinSessionName))
+        {
+            return;
+        }
+
+        string enteredPassword = passwordPopupInput != null ? passwordPopupInput.text.Trim() : string.Empty;
+        string expectedPassword = ExtractPasswordFromSessionName(pendingPasswordJoinSessionName);
+
+        if (string.Equals(enteredPassword, expectedPassword, System.StringComparison.Ordinal) == false)
+        {
+            ShowPopup("Incorrect password.");
+            FocusPasswordJoinPopupInput();
+            return;
+        }
+
+        ClosePasswordJoinPopup();
+        launcher.StartMatchmaking(pendingPasswordJoinSessionName, pendingPasswordJoinMaxPlayers);
+
+        if (popupRoot != null)
+        {
+            popupRoot.SetActive(true);
+            if (popupText != null)
+            {
+                popupText.text = matchmakingMessage;
+            }
+        }
+    }
+
+    private void ClosePasswordJoinPopup()
+    {
+        pendingPasswordJoinSessionName = null;
+        pendingPasswordJoinMaxPlayers = 1;
+
+        if (passwordPopupInput != null)
+        {
+            passwordPopupInput.text = string.Empty;
+        }
+
+        if (passwordPopupRoot != null)
+        {
+            passwordPopupRoot.SetActive(false);
+        }
     }
 
     private void CreateRowCell(Transform parent, string text, float width, TextAlignmentOptions align)
@@ -1286,6 +1538,19 @@ private void UpdatePasswordVisibility()
         }
     }
 
+    private void ResetCreateRoomDefaults()
+    {
+        if (privateRoomToggle != null)
+        {
+            privateRoomToggle.isOn = false;
+        }
+
+        if (roomPasswordInput != null)
+        {
+            roomPasswordInput.text = string.Empty;
+        }
+    }
+
     private void CloseRoomPanel()
     {
         ShowRoomPanel(false);
@@ -1336,77 +1601,6 @@ private void UpdatePasswordVisibility()
         if (roomPasswordInput != null && selected == roomPasswordInput.gameObject)
         {
             FocusRoomInput();
-        }
-    }
-
-    private bool HasRoomNameConflict(string roomName)
-    {
-        if (launcher == null || string.IsNullOrWhiteSpace(roomName))
-        {
-            return false;
-        }
-
-        var sessions = launcher.CachedSessionList;
-        if (sessions == null)
-        {
-            return false;
-        }
-
-        for (int i = 0; i < sessions.Count; i++)
-        {
-            string existingSessionName = sessions[i].Name;
-            if (string.IsNullOrWhiteSpace(existingSessionName))
-            {
-                continue;
-            }
-
-            string existingBaseName = ExtractBaseRoomName(existingSessionName);
-            if (string.Equals(existingBaseName, roomName, System.StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static string ExtractBaseRoomName(string sessionName)
-    {
-        if (string.IsNullOrEmpty(sessionName))
-        {
-            return string.Empty;
-        }
-
-        int separator = sessionName.IndexOf(PrivateRoomSeparator, System.StringComparison.Ordinal);
-        if (separator <= 0)
-        {
-            return sessionName.Trim();
-        }
-
-        return sessionName.Substring(0, separator).Trim();
-    }
-
-    private void EnsureEventSystem()
-    {
-        var eventSystem = FindFirstObjectByType<EventSystem>();
-        if (eventSystem == null)
-        {
-            var eventSystemObj = new GameObject("EventSystem");
-            eventSystem = eventSystemObj.AddComponent<EventSystem>();
-            eventSystemObj.AddComponent<InputSystemUIInputModule>();
-            DontDestroyOnLoad(eventSystemObj);
-            return;
-        }
-
-        if (eventSystem.GetComponent<InputSystemUIInputModule>() == null)
-        {
-            eventSystem.gameObject.AddComponent<InputSystemUIInputModule>();
-        }
-
-        var legacyModule = eventSystem.GetComponent<StandaloneInputModule>();
-        if (legacyModule != null)
-        {
-            legacyModule.enabled = false;
         }
     }
 
