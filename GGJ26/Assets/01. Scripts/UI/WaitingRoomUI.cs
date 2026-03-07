@@ -43,6 +43,9 @@ public class WaitingRoomUI : MonoBehaviour
     private bool lastIsHost;
     private RenderTexture[] previewTextures;
     private int lastLocalSkinIndex = -1;
+    private Vector3[] previewInitialLocalPositions;
+    private Quaternion[] previewInitialLocalRotations;
+    private Vector3[] previewInitialLocalScales;
 
     private void Awake()
     {
@@ -292,6 +295,10 @@ public class WaitingRoomUI : MonoBehaviour
             if (previewActors[i] == null)
             {
                 var found = GameObject.Find($"PreviewActor{i + 1}");
+                if (found == null)
+                {
+                    found = GameObject.Find($"PreviewSeekerModel{i + 1}");
+                }
                 if (found != null)
                 {
                     previewActors[i] = found;
@@ -444,6 +451,9 @@ public class WaitingRoomUI : MonoBehaviour
             return;
         }
 
+        previewInitialLocalPositions = new Vector3[previewActors.Length];
+        previewInitialLocalRotations = new Quaternion[previewActors.Length];
+        previewInitialLocalScales = new Vector3[previewActors.Length];
         previewTextures = new RenderTexture[Mathf.Min(previewCameras.Length, slots.Length)];
         int width = Mathf.Max(64, previewTextureSize.x);
         int height = Mathf.Max(64, previewTextureSize.y);
@@ -548,8 +558,8 @@ public class WaitingRoomUI : MonoBehaviour
             }
 
             appearance.SetPreviewMode(true);
-            int skinIndex = waitingRoomState.IsLocalPlayer(player) ? localSkinIndex : 0;
-            if (localSkinChanged || waitingRoomState.IsLocalPlayer(player) == false)
+            int skinIndex = waitingRoomState.GetSlotSkinIndex(i);
+            if (localSkinChanged || waitingRoomState.IsLocalPlayer(player) == false || skinIndex != 0)
             {
                 appearance.SetPreviewSeekerSkinIndex(skinIndex);
             }
